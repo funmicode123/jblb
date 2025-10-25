@@ -9,6 +9,7 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:15
@@ -25,13 +26,15 @@ jobs:
           --health-retries 5
 
     env:
-      DJANGO_SETTINGS_MODULE: jblb_backend.settings
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jblb_db
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/jblb_db
-      SECRET_KEY: test_secret_key
-      DEBUG: "1"
+      DJANGO_SETTINGS_MODULE: core.settings
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DEBUG: ${{ secrets.DJANGO_DEBUG }}
+
 
     steps:
       - name: Checkout Code
@@ -40,7 +43,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install Dependencies
         run: |
@@ -52,9 +55,9 @@ jobs:
           pip install flake8
           flake8 .
 
-      - name: Run Tests
+      - name: Run Migrations and Tests
         run: |
-          python manage.py migrate
+          python manage.py migrate --noinput
           python manage.py test --verbosity=2
 
   docker:

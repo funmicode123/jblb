@@ -11,6 +11,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles',
     'rest_framework','users','clubs','battles','blockchain'
 ]
+AUTH_USER_MODEL = "users.User"
+
 MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','django.contrib.sessions.middleware.SessionMiddleware',
 'django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware',
 'django.contrib.auth.middleware.AuthenticationMiddleware','django.contrib.messages.middleware.MessageMiddleware']
@@ -18,7 +20,18 @@ ROOT_URLCONF = 'jblb.urls'
 TEMPLATES=[{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[],'APP_DIRS':True,'OPTIONS':{'context_processors':[
     'django.template.context_processors.debug','django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages']}}]
 WSGI_APPLICATION='jblb.wsgi.application'
-DATABASES={'default':{'ENGINE':'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3'}}
+#DATABASES={'default':{'ENGINE':'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3'}}
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
+    }
+}
+
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
