@@ -1,0 +1,19 @@
+name: Prevent Direct Push to Main
+
+on:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  protect-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check user permissions
+        run: |
+          echo "⚠️ Direct push to protected branch detected by $GITHUB_ACTOR"
+          if [ "$GITHUB_ACTOR" != "Funmicode123" ]; then
+            echo "Only Funmilola can push directly to main/master."
+            exit 1
+          else
+            echo "✅ Authorized push by Funmilola."
+          fi
