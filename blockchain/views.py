@@ -1,7 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .anoma_service import publish_intent
-from .hedera_service import publish_to_hcs, create_fungible_token
+from blockchain.services.hedera_service import publish_intent
+from blockchain.services.hedera_service import publish_to_hcs
+
+
 class AnomaIntentView(APIView):
     def post(self, request):
         r = publish_intent(request.data); return Response(r)

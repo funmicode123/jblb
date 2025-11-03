@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from .models import Basket, Battle, Participant
+from .models import Basket, Battle, Player
 class BasketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Basket; fields = '__all__'
 class BattleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Battle; fields = '__all__'
-class ParticipantSerializer(serializers.ModelSerializer):
+class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Participant; fields = '__all__'
+        model = Player; fields = '__all__'

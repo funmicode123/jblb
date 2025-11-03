@@ -1,13 +1,25 @@
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Club
-from .serializers import ClubSerializer
-from .services import create_club
-class CreateClubView(APIView):
-    def post(self, request):
+from rest_framework import status, generics
+from clubs.serializers import ClubSerializer
+from clubs.services.club_service import create_club
+class CreateClubView(generics.CreateAPIView):
+    serializer_class = ClubSerializer
+    def post(self, request, *args, **kwargs):
+        owner = request.user
         data = request.data
-        name = data.get('name'); owner = data.get('owner_wallet')
-        if not name or not owner: return Response({'error':'name and owner_wallet required'}, status=400)
-        nft = create_club(name, owner)
-        club = Club.objects.create(name=name, owner_wallet=owner, nft_id=nft.get('match_id') if isinstance(nft, dict) else None)
-        return Response(ClubSerializer(club).data)
+
+        result = create_club(
+            name=data.get("name"),
+            owner=owner,
+            owner_wallet=data.get("owner_wallet"),
+            category=data.get("category", "common"),
+            tier=data.get("tier", "COMMON"),
+            access_type=data.get("access_type", "Free"),
+            privileges=data.get("privileges", ""),
+        )
+
+        # Handle insufficient token balance
+        if result.get("status") == "failed":
+            return Response(result, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(result, status=status.HTTP_201_CREATED)

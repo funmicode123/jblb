@@ -3,6 +3,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
+HEDERA_OPERATOR_ID = os.getenv("HEDERA_OPERATOR_ID")
+HEDERA_OPERATOR_KEY = os.getenv("HEDERA_OPERATOR_KEY")
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 DEBUG = os.getenv('DEBUG', '1') == '1'
 ALLOWED_HOSTS = ['*']
@@ -32,6 +34,12 @@ DATABASES = {
     }
 }
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -39,3 +47,4 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
