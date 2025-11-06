@@ -17,7 +17,10 @@ if not HEDERA_OPERATOR_ID or not HEDERA_OPERATOR_KEY:
     raise EnvironmentError("Missing HEDERA_OPERATOR_ID or HEDERA_OPERATOR_KEY in environment variables")
 
 client = Client()
-client.set_operator(AccountId.from_string(HEDERA_OPERATOR_ID), PrivateKey.from_string(HEDERA_OPERATOR_KEY))
+client.set_operator(
+    AccountId.from_string(HEDERA_OPERATOR_ID),
+    PrivateKey.from_string(HEDERA_OPERATOR_KEY)
+)
 
 
 def create_hedera_account():
