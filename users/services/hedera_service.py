@@ -7,7 +7,6 @@ from hiero_sdk_python import (
 )
 import os
 from hiero_sdk_python.utils.crypto_utils import keccak256
-#from hiero_sdk_python.crypto.private_key import KeyType
 
 
 HEDERA_MIRROR_NODE = "https://testnet.mirrornode.hedera.com/api/v1"
@@ -47,6 +46,7 @@ def create_hedera_account():
         "hedera_private_key": str(new_private_key),
         "evm_address": f"0x{evm_address}",
     }
+
 
 def validate_token(token_id: str):
     """

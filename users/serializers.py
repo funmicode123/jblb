@@ -6,10 +6,6 @@ from .models import User
 from .services.hedera_service import create_hedera_account
 from utils.encryption import encrypt_value, decrypt_value
 
-# class UserSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = User
-#         fields = ('id','username','wallet_address')
 
 class UserSignupSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,16 +23,15 @@ class UserSignupSerializer(serializers.ModelSerializer):
         )
         user.set_password(validated_data["password"])
 
-        # Create Hedera account on signup
         hedera_info = create_hedera_account()
 
-        # Encrypt before saving
         user.hedera_account_id = encrypt_value(str(hedera_info["hedera_account_id"]))
         user.hedera_public_key = encrypt_value(hedera_info["hedera_public_key"])
         user.hedera_private_key = encrypt_value(hedera_info["hedera_private_key"])
 
         user.save()
         return user
+
 
     def to_representation(self, instance):
         """Optionally decrypt before returning (useful for admin/internal API)"""
@@ -46,7 +41,6 @@ class UserSignupSerializer(serializers.ModelSerializer):
             data["hedera_public_key"] = decrypt_value(instance.hedera_public_key)
             data["hedera_private_key"] = decrypt_value(instance.hedera_private_key)
         except Exception:
-            # In case of missing encryption key or invalid cipher
             data["hedera_account_id"] = None
             data["hedera_public_key"] = None
             data["hedera_private_key"] = None
@@ -58,11 +52,13 @@ class PublicUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "hedera_account_id"]
 
+
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)
+
 
     def validate(self, attrs):
         username = attrs.get('username')

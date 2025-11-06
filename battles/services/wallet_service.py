@@ -1,5 +1,6 @@
 import uuid
 
+
 def create_user_wallet(user):
     """
     Mock wallet creation — replace with Hedera SDK or REST call

@@ -4,6 +4,8 @@ from rest_framework import generics, status, permissions
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import User
 from .serializers import UserSignupSerializer, UserLoginSerializer
+
+
 class ProfileView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -17,6 +19,7 @@ class ProfileView(APIView):
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSignupSerializer
+
 
 class LoginView(generics.GenericAPIView):
     serializer_class = UserLoginSerializer

@@ -2,9 +2,11 @@ from blockchain.services.hedera_service import validate_nft_ownership
 from blockchain.utils.hedera_utils import verify_nft_access
 from django.core.exceptions import PermissionDenied
 
+
 # ✅ 1. Public club — anyone can access
 def is_public_club(club):
     return getattr(club, "is_public", False)
+
 
     # ✅ 2. Check if player is already in the club’s player list
 def is_member(wallet_address, club):
@@ -18,6 +20,7 @@ def _validate_nft_ownership(player, nft_id):
 def _verify_nft_access(wallet_address, club):
     from blockchain.utils.hedera_utils import verify_nft_access
     return verify_nft_access(wallet_address, club.nft_collection_id)
+
 
 def validate_player_access(player, club):
     """

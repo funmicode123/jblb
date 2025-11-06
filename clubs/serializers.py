@@ -3,6 +3,7 @@ from .constant import CLUB_TIERS
 from .models import Club
 from clubs.services.club_service import create_club
 
+
 class ClubSerializer(serializers.ModelSerializer):
     class Meta:
         model = Club

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from clubs.serializers import ClubSerializer
 
+
 class CreateClubView(generics.CreateAPIView):
     serializer_class = ClubSerializer
     permission_classes = [IsAuthenticated]

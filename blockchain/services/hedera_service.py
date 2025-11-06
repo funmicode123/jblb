@@ -14,6 +14,7 @@ HEDERA_OPERATOR_KEY = os.getenv('HEDERA_OPERATOR_KEY')
 #
 MIRROR_NODE = "https://testnet.mirrornode.hedera.com/api/v1"
 
+
 def publish_intent(intent, topic_id=None):
     """
     Publishes an intent (e.g. club mint request) to Hedera Consensus Service (HCS).

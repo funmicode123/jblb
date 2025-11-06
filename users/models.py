@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from utils.encryption import decrypt_value
 import uuid
+
+
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=50, unique=True)
@@ -9,6 +11,7 @@ class User(AbstractUser):
     hedera_account_id = models.CharField(max_length=100, blank=True, null=True)
     hedera_public_key = models.TextField(blank=True, null=True)
     hedera_private_key = models.TextField(blank=True, null=True)
+
 
     def get_hedera_keys(self):
         return {

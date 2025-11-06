@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from datetime import datetime, timedelta
 
+
 HEDERA_MIRROR_NODE = "https://mainnet-public.mirrornode.hedera.com/api/v1"  # or testnet
 
 def get_account_balance(account_id):
@@ -19,6 +20,7 @@ def get_account_balance(account_id):
         return res.json()
     else:
         raise Exception(f"Failed to fetch balance: {res.text}")
+
 
 def get_token_info(token_id):
     """Fetch token (or NFT) details from Hedera."""
@@ -31,6 +33,7 @@ def list_account_tokens(account_id):
     url = f"{HEDERA_MIRROR_NODE}/accounts/{account_id}/tokens"
     res = requests.get(url)
     return res.json() if res.status_code == 200 else None
+
 
 def join_battle(battle_id, data):
     battle = get_object_or_404(Battle, id=battle_id)
@@ -68,3 +71,4 @@ def join_battle(battle_id, data):
         battle.save()
 
     return player
+
