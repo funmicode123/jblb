@@ -3,18 +3,19 @@ from hiero_sdk_python import (
     Client,
     PrivateKey,
     AccountCreateTransaction,
-    Hbar, AccountId, TransactionReceipt
+    Hbar, AccountId
 )
 import os
 from hiero_sdk_python.utils.crypto_utils import keccak256
 
 
 HEDERA_MIRROR_NODE = "https://testnet.mirrornode.hedera.com/api/v1"
-HEDERA_OPERATOR_ID = os.getenv("HEDERA_OPERATOR_ID") # Your testnet ID
-HEDERA_OPERATOR_KEY = os.getenv("HEDERA_OPERATOR_KEY")  # Your testnet private key
+HEDERA_OPERATOR_ID = os.getenv("HEDERA_OPERATOR_ID")
+HEDERA_OPERATOR_KEY = os.getenv("HEDERA_OPERATOR_KEY")
 
 if not HEDERA_OPERATOR_ID or not HEDERA_OPERATOR_KEY:
-    raise EnvironmentError("Missing HEDERA_OPERATOR_ID or HEDERA_OPERATOR_KEY in environment variables")
+    raise EnvironmentError("Missing HEDERA_OPERATOR_ID or "
+                           "HEDERA_OPERATOR_KEY in environment variables")
 
 client = Client()
 client.set_operator(
@@ -41,7 +42,9 @@ def create_hedera_account():
     receipt = tx_response.execute(client)
     new_account_id = receipt.account_id
 
-    evm_address = keccak256(new_public_key.to_bytes_ecdsa(compressed=False)[1:])[-20:].hex()
+    evm_address = keccak256(
+        new_public_key.to_bytes_ecdsa(compressed=False)[1:]
+    )[-20:].hex()
 
     return {
         "hedera_account_id": str(new_account_id),
