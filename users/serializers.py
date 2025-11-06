@@ -11,8 +11,13 @@ class UserSignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "username", "email", "password",
-            "hedera_account_id", "hedera_public_key", "hedera_private_key"
+            "id",
+            "username",
+            "email",
+            "password",
+            "hedera_account_id",
+            "hedera_public_key",
+            "hedera_private_key"
         ]
         extra_kwargs = {"password": {"write_only": True}}
 
@@ -31,7 +36,6 @@ class UserSignupSerializer(serializers.ModelSerializer):
 
         user.save()
         return user
-
 
     def to_representation(self, instance):
         """Optionally decrypt before returning (useful for admin/internal API)"""
@@ -59,7 +63,6 @@ class UserLoginSerializer(serializers.Serializer):
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)
 
-
     def validate(self, attrs):
         username = attrs.get('username')
         password = attrs.get('password')
@@ -71,7 +74,7 @@ class UserLoginSerializer(serializers.Serializer):
         refresh = RefreshToken.for_user(user)
 
         return {
-            'refresh' : str(refresh),
+            'refresh': str(refresh),
             'access': str(refresh.access_token),
             'username': user.username,
         }
