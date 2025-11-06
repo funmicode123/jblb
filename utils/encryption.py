@@ -1,7 +1,6 @@
 from cryptography.fernet import Fernet
 import os
 
-# Load key from environment (important for consistency)
 FERNET_KEY = os.getenv("FERNET_SECRET_KEY")
 
 if not FERNET_KEY:
@@ -9,11 +8,11 @@ if not FERNET_KEY:
 
 fernet = Fernet(FERNET_KEY.encode())
 
-def encrypt_value(value: str) -> str:
-    """Encrypts a string value."""
-    if not value:
-        return None
+def encrypt_value(value):
+    if not isinstance(value, str):
+        value = str(value)
     return fernet.encrypt(value.encode()).decode()
+
 
 def decrypt_value(encrypted_value: str) -> str:
     """Decrypts a string value."""

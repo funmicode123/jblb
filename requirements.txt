@@ -6,3 +6,4 @@ psycopg2-binary
 pytest
 pytest-django
 requests
+hiero-sdk-python

@@ -31,7 +31,7 @@ class UserSignupSerializer(serializers.ModelSerializer):
         hedera_info = create_hedera_account()
 
         # Encrypt before saving
-        user.hedera_account_id = encrypt_value(hedera_info["hedera_account_id"])
+        user.hedera_account_id = encrypt_value(str(hedera_info["hedera_account_id"]))
         user.hedera_public_key = encrypt_value(hedera_info["hedera_public_key"])
         user.hedera_private_key = encrypt_value(hedera_info["hedera_private_key"])
 
@@ -73,6 +73,9 @@ class UserLoginSerializer(serializers.Serializer):
             raise AuthenticationFailed('Invalid username or password')
 
         refresh = RefreshToken.for_user(user)
-        attrs['refresh'] = str(refresh)
-        attrs['access'] = str(refresh.access_token)
-        return attrs
+
+        return {
+            'refresh' : str(refresh),
+            'access': str(refresh.access_token),
+            'username': user.username,
+        }

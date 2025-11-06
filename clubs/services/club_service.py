@@ -3,26 +3,20 @@ from clubs.models import Club
 import os
 
 JBLB_TOKEN_ID = os.getenv("JBLB_TOKEN_ID", "0.0.999999")
-MIN_JBLB_BALANCE = int(os.getenv("JBLB_MIN_BALANCE", 10))
+MIN_JBLB_BALANCE = int(os.getenv("JBLB_MIN_BALANCE", 1))
 
-def create_club(name, user, description, owner, owner_wallet, category="common", tier="COMMON", access_type="Free", privileges=""):
+def create_club(name, owner, owner_wallet, category="COMMON", tier="COMMON", access_type="Free", privileges=""):
     """
     Creates a Club record in Django + publishes a blockchain mint intent.
     Requires the user to hold a minimum amount of JBLB tokens.
     """
 
-    club = Club.objects.create(
-        owner=user,
-        name=name,
-        description=description
-    )
-
-    # 🔐 Step 1: Validate token ownership (must hold >= 10 JBLB tokens)
-    has_tokens = validate_token_balance(owner_wallet, JBLB_TOKEN_ID, min_balance=10)
+    # 🔐 Step 1: Validate token ownership
+    has_tokens = validate_token_balance(owner_wallet, JBLB_TOKEN_ID, min_balance=MIN_JBLB_BALANCE)
     if not has_tokens:
         return {
             "status": "failed",
-            "message": f"Insufficient JBLB balance. You must hold at least 10 $JBLB tokens to create a club."
+            "message": f"Insufficient JBLB balance. You must hold at least {MIN_JBLB_BALANCE} $JBLB tokens to create a club."
         }
 
     # 🧩 Step 2: Construct blockchain mint intent
@@ -34,28 +28,12 @@ def create_club(name, user, description, owner, owner_wallet, category="common",
         "category": category,
     }
 
-    # 🪙 Step 3: Publish to blockchain or mock network
+    # 🪙 Step 3: Publish to blockchain
     result = publish_intent(intent)
 
-    # 🧱 Step 4: Save club in Django DB
-    club = Club.objects.create(
-        name=name,
-        owner=owner,
-        category=category,
-        owner_wallet=owner_wallet,
-        tier=tier,
-        access_type=access_type,
-        privileges=privileges,
-        nft_id=result.get("nft_id"),
-    )
-
+    # ✅ Return blockchain metadata (no DB creation here)
     return {
-        "status": "created",
-        "club": {
-            "id": str(club.id),
-            "name": club.name,
-            "owner_wallet": club.owner_wallet,
-            "nft_id": club.nft_id,
-            "tx_hash": result.get("tx_hash"),
-        },
+        "status": "success",
+        "nft_id": result.get("nft_id", "mock-nft"),
+        "tx_hash": result.get("tx_hash", "mock-hash"),
     }

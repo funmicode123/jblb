@@ -20,3 +20,5 @@ CLUB_TIERS = {
         "privileges": "Exclusive farms; high-APY and cross-chain access",
     }
 }
+
+CLUB_TIER_CHOICES = [(key, key.title()) for key in CLUB_TIERS.keys()]

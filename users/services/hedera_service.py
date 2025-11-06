@@ -7,6 +7,8 @@ from hiero_sdk_python import (
 )
 import os
 from hiero_sdk_python.utils.crypto_utils import keccak256
+#from hiero_sdk_python.crypto.private_key import KeyType
+
 
 HEDERA_MIRROR_NODE = "https://testnet.mirrornode.hedera.com/api/v1"
 HEDERA_OPERATOR_ID = os.getenv("HEDERA_OPERATOR_ID") # Your testnet ID
@@ -24,7 +26,7 @@ def create_hedera_account():
     Returns Hedera account details and EVM-compatible address.
     """
     # Generate a new private/public key pair
-    new_private_key = PrivateKey.generate()
+    new_private_key = PrivateKey.generate_ecdsa()
     new_public_key = new_private_key.public_key()
 
     tx_response = (
@@ -33,16 +35,14 @@ def create_hedera_account():
         .set_initial_balance(Hbar(10))
 
     )
-    # Get the transaction receipt (waits for network consensus)
+
     receipt = tx_response.execute(client)
     new_account_id = receipt.account_id
 
-    # Compute the EVM address (last 20 bytes of Keccak-256 hash of public key)
     evm_address = keccak256(new_public_key.to_bytes_ecdsa(compressed=False)[1:])[-20:].hex()
 
-    # Return account details
     return {
-        "hedera_account_id": new_account_id,
+        "hedera_account_id": str(new_account_id),
         "hedera_public_key": str(new_public_key),
         "hedera_private_key": str(new_private_key),
         "evm_address": f"0x{evm_address}",

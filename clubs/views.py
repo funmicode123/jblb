@@ -1,25 +1,14 @@
+from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework.permissions import IsAuthenticated
 from clubs.serializers import ClubSerializer
-from clubs.services.club_service import create_club
+
 class CreateClubView(generics.CreateAPIView):
     serializer_class = ClubSerializer
-    def post(self, request, *args, **kwargs):
-        owner = request.user
-        data = request.data
+    permission_classes = [IsAuthenticated]
 
-        result = create_club(
-            name=data.get("name"),
-            owner=owner,
-            owner_wallet=data.get("owner_wallet"),
-            category=data.get("category", "common"),
-            tier=data.get("tier", "COMMON"),
-            access_type=data.get("access_type", "Free"),
-            privileges=data.get("privileges", ""),
-        )
-
-        # Handle insufficient token balance
-        if result.get("status") == "failed":
-            return Response(result, status=status.HTTP_403_FORBIDDEN)
-
-        return Response(result, status=status.HTTP_201_CREATED)
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        club = serializer.save()
+        return Response(self.get_serializer(club).data, status=status.HTTP_201_CREATED)

@@ -12,7 +12,7 @@ class User(AbstractUser):
 
     def get_hedera_keys(self):
         return {
-            "account_id": decrypt_value(self.hedera_account_id),
+            "account_id": self.hedera_account_id,
             "public_key": decrypt_value(self.hedera_public_key),
             "private_key": decrypt_value(self.hedera_private_key)
         }
