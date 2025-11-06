@@ -30,9 +30,12 @@ class UserSignupSerializer(serializers.ModelSerializer):
 
         hedera_info = create_hedera_account()
 
-        user.hedera_account_id = encrypt_value(str(hedera_info["hedera_account_id"]))
-        user.hedera_public_key = encrypt_value(hedera_info["hedera_public_key"])
-        user.hedera_private_key = encrypt_value(hedera_info["hedera_private_key"])
+        user.hedera_account_id = encrypt_value(
+            str(hedera_info["hedera_account_id"]))
+        user.hedera_public_key = encrypt_value(
+            hedera_info["hedera_public_key"])
+        user.hedera_private_key = encrypt_value(
+            hedera_info["hedera_private_key"])
 
         user.save()
         return user
@@ -41,9 +44,12 @@ class UserSignupSerializer(serializers.ModelSerializer):
         """Optionally decrypt before returning (useful for admin/internal API)"""
         data = super().to_representation(instance)
         try:
-            data["hedera_account_id"] = decrypt_value(instance.hedera_account_id)
-            data["hedera_public_key"] = decrypt_value(instance.hedera_public_key)
-            data["hedera_private_key"] = decrypt_value(instance.hedera_private_key)
+            data["hedera_account_id"] = decrypt_value(
+                instance.hedera_account_id)
+            data["hedera_public_key"] = decrypt_value(
+                instance.hedera_public_key)
+            data["hedera_private_key"] = decrypt_value(
+                instance.hedera_private_key)
         except Exception:
             data["hedera_account_id"] = None
             data["hedera_public_key"] = None
