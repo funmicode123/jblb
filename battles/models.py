@@ -1,16 +1,23 @@
 from django.db import models
 import uuid
 from django.conf import settings
-from clubs.models import Club
+from clubs.models import Club, CLUB_TIERS
+from users.models import User
 from blockchain.models import Token
 
 
 class Basket(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    creator_wallet = models.CharField(max_length=255)
-    config = models.JSONField()
-    initial_value = models.FloatField(default=100)
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="baskets", null=True, blank=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="baskets", null=True, blank=True)
+    creator_wallet =models.CharField(max_length=100, null=True, blank=True)
+    name=models.CharField(max_length=100, null=True, blank=True)
+    tokens= models.JSONField(default=list)
+    total_weight = models.FloatField(default=0)
+    initial_value = models.FloatField(default=100.0)
+    oracle_source=models.CharField(max_length=50, default="pyth", editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Basket by {self.creator_wallet}"
@@ -20,7 +27,7 @@ class Battle(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
     token = models.CharField(max_length=50, default='ETH')
-    tier = models.IntegerField(default=1)
+    tier = models.IntegerField(CLUB_TIERS, default="COMMON")
     duration_seconds = models.IntegerField(default=3600)
     velocity = models.IntegerField(default=2)
     stake_amount = models.FloatField(default=100)

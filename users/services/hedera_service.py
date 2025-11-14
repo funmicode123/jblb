@@ -36,7 +36,6 @@ def create_hedera_account():
         AccountCreateTransaction()
         .set_key(new_public_key)
         .set_initial_balance(Hbar(10))
-
     )
 
     receipt = tx_response.execute(client)

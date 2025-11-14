@@ -42,3 +42,27 @@ class ClubSerializer(serializers.ModelSerializer):
 
         club.save()
         return club
+
+
+class JoinClubSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField()
+
+    def validate(self, attrs):
+        club = self.context.get("club")
+        user = self.context.get("user")
+
+        if club.members.filter(id=user.id).exists():
+            raise serializers.ValidationError("User already joined this club.")
+        return attrs
+
+
+class ClubListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Club
+        fields = ["id", "name", "description", "created_at"]
+
+
+class ClubUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Club
+        fields = ["name", "description"]
