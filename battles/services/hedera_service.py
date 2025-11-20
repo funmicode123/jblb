@@ -1,19 +1,23 @@
 import requests
 import os
 
+from clubs.services.hedera_service import upload_to_ipfs
 from ..models import Battle, Player, Basket
 from ..validator import validate_player_access
 from clubs.models import Club
-from blockchain.utils.hedera_utils import verify_nft_access  # example helper
+from blockchain.utils.hedera_utils import verify_nft_access
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from datetime import datetime, timedelta
 
+from hiero_sdk_python import(
+    Client, TokenMintTransaction, PrivateKey, AccountId, TokenId
+)
 
-HEDERA_MIRROR_NODE = "https://mainnet-public.mirrornode.hedera.com/api/v1"  # or testnet
+
+HEDERA_MIRROR_NODE = "https://mainnet-public.mirrornode.hedera.com/api/v1"
 
 def get_account_balance(account_id):
-    """Fetch account balance from Hedera mirror node."""
     url = f"{HEDERA_MIRROR_NODE}/accounts/{account_id}"
     res = requests.get(url)
     if res.status_code == 200:
@@ -23,13 +27,11 @@ def get_account_balance(account_id):
 
 
 def get_token_info(token_id):
-    """Fetch token (or NFT) details from Hedera."""
     url = f"{HEDERA_MIRROR_NODE}/tokens/{token_id}"
     res = requests.get(url)
     return res.json() if res.status_code == 200 else None
 
 def list_account_tokens(account_id):
-    """List all tokens (fungible or NFT) linked to an account."""
     url = f"{HEDERA_MIRROR_NODE}/accounts/{account_id}/tokens"
     res = requests.get(url)
     return res.json() if res.status_code == 200 else None
@@ -72,3 +74,53 @@ def join_battle(battle_id, data):
 
     return player
 
+
+def mint_rank_nft(user, battle_title: str, rank: int):
+    rank_images = {
+        1: "ipfs://bafkreifdmjpg2jlkuimlk24vzd5t7zvoxw66jkczvbgquyf2qqcnw3jhv4",
+        2: "ipfs://bafkreicqjawx3eigptbrsskerdbmrumse7oiknvysbefl554gwjzccyhze",
+        3: "ipfs://bafkreid7q5nblasnwk3dpa52pptjmdpjd7m24qz55d26tpfy7oq2jccslq",
+    }
+
+    rank_names = {1: "1st Place Champion", 2: "2nd Place Runner-Up", 3: "3rd Place Legend"}
+    colors = {1: "Gold", 2: "Silver", 3: "Bronze"}
+
+    metadata = {
+        "name": f"{rank_names[rank]} – {battle_title}",
+        "description": f"Top {rank} performer in {battle_title} – Only one minted per battle!",
+        "image": rank_images[rank],
+        "attributes": [
+            {"trait_type": "Rank", "value": rank},
+            {"trait_type": "Placement", "value": rank_names[rank]},
+            {"trait_type": "Color", "value": colors[rank]},
+            {"trait_type": "Battle", "value": battle_title},
+            {"trait_type": "Recipient", "value": user.username},
+        ]
+    }
+
+    cid = upload_to_ipfs(metadata)
+    metadata_uri = f"ipfs://{cid}"
+
+    client = Client()
+    client.set_operator(
+        AccountId.from_string(os.getenv("HEDERA_OPERATOR_ID")),
+        PrivateKey.from_string(os.getenv("HEDERA_OPERATOR_KEY"))
+    )
+
+    COLLECTION_ID = TokenId.from_string(os.getenv("JBLB_RANK_NFT_COLLECTION_ID"))
+    SUPPLY_KEY = PrivateKey.from_string(os.getenv("HEDERA_OPERATOR_KEY"))
+
+    mint_tx = (
+        TokenMintTransaction()
+        .set_token_id(COLLECTION_ID)
+        .set_metadata([metadata_uri.encode("utf-8")])
+        .freeze_with(client)
+        .sign(SUPPLY_KEY)
+    )
+
+    receipt = mint_tx.execute(client)
+    serial = receipt.serial_numbers[0]
+
+    print(f"Minted Rank #{rank} NFT to {user.username} | Serial: {serial} | CID: {cid}")
+
+    return serial

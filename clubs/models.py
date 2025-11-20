@@ -34,3 +34,12 @@ class Club(models.Model):
     @property
     def tier_config(self):
         return CLUB_TIERS.get(self.tier, {})
+
+
+class CommonNFT(models.Model):
+    serial = models.BigIntegerField(unique=True)
+    is_assigned = models.BooleanField(default=False)
+    club = models.OneToOneField(Club, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ['serial']

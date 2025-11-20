@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from clubs.models import Club
+from clubs.models import Club, CommonNFT
 
 
 def get_club_by_id(club_id):
@@ -34,3 +34,7 @@ def get_club_members(club):
 
 def is_owner(club, user):
     return club.owner == user
+
+
+def get_free_common_nft():
+    return CommonNFT.objects.filter(is_assigned=False).first()

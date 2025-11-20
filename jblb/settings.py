@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
+from celery.schedules import crontab
 BASE_DIR = Path(__file__).resolve().parent.parent
 HEDERA_OPERATOR_ID = os.getenv("HEDERA_OPERATOR_ID")
 HEDERA_OPERATOR_KEY = os.getenv("HEDERA_OPERATOR_KEY")
@@ -47,4 +48,17 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_BEAT_SCHEDULE = {
+    'pyth-rebalance-every-2-min': {
+        'task': 'battles.tasks.pyth_rebalance_all',
+        'schedule': crontab(minute='*/2'),
+    },
+}
 

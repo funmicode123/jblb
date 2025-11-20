@@ -8,3 +8,5 @@ pytest-django
 requests
 hiero-sdk-python
 pythclient
+celery
+redis

@@ -9,7 +9,7 @@ class BasketRepository:
     def create_basket(data) -> Basket:
         club = Club.objects.get(id=data['club'].id)
 
-        initial_value = BasketRepository._fetch_oracle_initial_value(data["tokens"])
+        #initial_value = BasketRepository._fetch_oracle_initial_value(data["tokens"])
 
         basket = Basket.objects.create(
             club=club,
@@ -18,7 +18,9 @@ class BasketRepository:
             name=data.get("name"),
             tokens=data.get("tokens", []),
             total_weight=data["total_weight"],
-            initial_value=initial_value
+            initial_value=100,
+            current_value=100,
+            oracle_source="pyth"
         )
         return basket
 

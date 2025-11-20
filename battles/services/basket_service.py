@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 
 class BasketService:
     @staticmethod
-    def create_basket(user, club_id, basket_data):
+    def create_basket(user, club_id, name, tokens):
         try:
             club = Club.objects.get(id=club_id)
         except Club.DoesNotExist:
@@ -22,8 +22,7 @@ class BasketService:
         if not user.hedera_account_id:
             raise ValidationError ("User wallet address not found.")
 
-        name = basket_data.get("name")
-        tokens = basket_data.get("tokens", [])
+
         validate_tokens(tokens)
 
         total_weight = sum(token["weight"] for token in tokens)
@@ -35,10 +34,11 @@ class BasketService:
             "name": name,
             "tokens": tokens,
             "total_weight": total_weight,
+            "initial_value": 100,
+            "current_value": 100,
+            "oracle_source": "pyth"
         })
-
         return basket
-
 
     @staticmethod
     def get_basket(basket_id):

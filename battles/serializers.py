@@ -16,36 +16,55 @@ class CreatorSerializer(serializers.ModelSerializer):
                 return obj.hedera_account_id
         return None
 
+
 class BasketSerializer(serializers.ModelSerializer):
     creator = CreatorSerializer(read_only=True)
 
     class Meta:
         model = Basket
         fields = [
-            "id",
-            "club",
-            "creator",
-            "creator_wallet",
-            "name",
-            "tokens",
-            "total_weight",
-            "created_at",
+            "id", "club", "creator", "creator_wallet", "name",
+            "tokens", "total_weight", "initial_value", "current_value", "created_at"
         ]
-        read_only_fields = ["id", "creator", "creator_wallet", "total_weight", "created_at"]
+        read_only_fields = [
+            "id", "creator", "creator_wallet", "total_weight",
+            "initial_value", "current_value", "created_at"
+        ]
 
 
 class CreateBasketSerializer(serializers.Serializer):
-    # club_id = serializers.UUIDField()
-    # creator_wallet = serializers.CharField(max_length=255)
-    name = serializers.CharField(max_length=100)
+    name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     tokens = serializers.JSONField()
-    initial_value = serializers.FloatField(default=5)
+
+    def validate_tokens(self, value):
+        if not isinstance(value, list) or len(value) == 0:
+            raise serializers.ValidationError("Tokens must be a non-empty list.")
+        total = sum(item.get("weight", 0) for item in value)
+        if abs(total - 100) > 0.01:
+            raise serializers.ValidationError("Total weight must be exactly 100.")
+        return value
 
     def validate_club_id(self, value):
-        from clubs.models import Club
-        if not Club.objects.filter(id=value).exists():
-            raise serializers.ValidationError("Invalid club ID.")
+        if value:
+            from clubs.models import Club
+            if not Club.objects.filter(id=value).exists():
+                raise serializers.ValidationError("Invalid club ID.")
         return value
+
+    def create(self, validated_data):
+        # AUTO SET initial_value = 100.0
+        # AUTO SET current_value = 100.0
+        basket = Basket.objects.create(
+            name=validated_data["name"],
+            tokens=validated_data["tokens"],
+            club_id=validated_data.get("club_id"),
+            creator=self.context["request"].user,
+            creator_wallet=getattr(self.context["request"].user, "hedera_account_id", None),
+            initial_value=100.0,
+            current_value=100.0,
+            total_weight=100.0,
+        )
+        return basket
 
 
 class BattleSerializer(serializers.ModelSerializer):

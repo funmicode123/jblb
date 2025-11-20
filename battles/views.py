@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .serializers import BasketSerializer, BattleSerializer, PlayerSerializer
+from .serializers import CreateBasketSerializer, BasketSerializer, BattleSerializer, PlayerSerializer
 from .services.hedera_service import join_battle
 from .models import Basket, Battle, Player
 from battles.services.basket_service import BasketService
@@ -12,22 +12,18 @@ class CreateBasketView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, club_id):
-        serializer = BasketSerializer(data=request.data)
+        serializer = CreateBasketSerializer(
+            data=request.data,
+            context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
-        basket_data = serializer.validated_data
-
-        wallet_address = getattr(request.user, "hedera_account_id", None)
-        if not wallet_address:
-            return Response(
-                {"error": "User wallet address not found"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
         try:
             basket = BasketService.create_basket(
                 user=request.user,
                 club_id=club_id,
-                basket_data=basket_data
+                name=serializer.validated_data["name"],
+                tokens=serializer.validated_data["tokens"],
             )
             return Response(BasketSerializer(basket).data,
                             status=status.HTTP_201_CREATED)

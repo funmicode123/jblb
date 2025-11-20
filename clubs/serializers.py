@@ -5,44 +5,50 @@ from clubs.services.club_service import create_club
 
 
 class ClubSerializer(serializers.ModelSerializer):
+    nft_metadata_url = serializers.SerializerMethodField()
     class Meta:
         model = Club
         fields = [
-            "id", "name", "category", "owner", "owner_wallet",
-            "nft_id", "tier", "access_type", "privileges", "created_at"
+            "id", "name", "description", "category",  "tier", "owner_wallet",
+            "nft_id", "nft_serial", "metadata_cid", "nft_metadata_url",
+            "access_type", "privileges", "created_at"
         ]
-        read_only_fields = ["owner", "access_type", "privileges", "nft_id", "created_at"]
+        read_only_fields = ["owner_wallet", "nft_id", "nft_serial",
+                            "metadata_cid", "created_at"]
+
+    def get_nft_metadata_url(self, obj):
+        if obj.metadata_cid and not obj.metadata_cid.startswith("premint"):
+            return f"https://gateway.pinata.cloud/ipfs/{obj.metadata_cid}"
+        return None
 
     def create(self, validated_data):
         request = self.context.get("request")
         user = request.user
 
-        # 🪙 Auto-fill tier defaults
-        tier = validated_data.get("tier", "COMMON")
-        tier_info = CLUB_TIERS.get(tier.upper(), CLUB_TIERS["COMMON"])
+        tier = validated_data.get("tier", "COMMON").upper()
+        tier_info = CLUB_TIERS.get(tier, CLUB_TIERS["COMMON"])
 
-        validated_data["access_type"] = tier_info.get("access_type", "Free")
-        validated_data["privileges"] = tier_info.get("privileges", "Basic yield farms")
-        validated_data["owner_wallet"] = getattr(user, "hedera_account_id", "0.0.0000")
+        validated_data.update({
+            "access_type": tier_info["access_type"],
+            "privileges": tier_info["privileges"],
+            "owner_wallet": getattr(user, "hedera_account_id", "0.0.0000")
+        })
 
-        club = Club.objects.create(owner=user, **validated_data)
-
-        blockchain_result = create_club(
-            name=club.name,
+        club = create_club(
+            name=validated_data["name"],
             owner=user,
-            owner_wallet=club.owner_wallet,
-            category=club.category,
-            tier=club.tier,
-            access_type=club.access_type,
-            privileges=club.privileges,
+            owner_wallet=validated_data["owner_wallet"],
+            category=validated_data.get("category", "COMMON"),
+            tier=tier,
+            description=validated_data.get("description")
         )
-
-        if blockchain_result.get("status") == "success":
-            club.nft_id = blockchain_result["nft_id"]
-
-        club.save()
         return club
 
+    @staticmethod
+    def get_nft_metadata_url(obj):
+        if obj.metadata_cid and not obj.metadata_cid.startswith("premint"):
+            return f"https://gateway.pinata.cloud/ipfs/{obj.metadata_cid}"
+        return None
 
 class JoinClubSerializer(serializers.Serializer):
     user_id = serializers.UUIDField()

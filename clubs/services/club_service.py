@@ -1,44 +1,60 @@
 from blockchain.services.hedera_service import publish_intent, validate_token_balance
-from clubs.models import Club
+from clubs.models import Club, CommonNFT
 import os
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from clubs.repository import club_repository
+from clubs.repository.club_repository import get_free_common_nft, add_member_to_club
+from clubs.services.hedera_service import mint_and_assign_common_nft
 
 
 JBLB_TOKEN_ID = os.getenv("JBLB_TOKEN_ID", "0.0.999999")
 MIN_JBLB_BALANCE = int(os.getenv("JBLB_MIN_BALANCE", 1))
 
 
-def create_club(name, owner, owner_wallet, category="COMMON", tier="COMMON", access_type="Free", privileges=""):
-    """
-    Creates a Club record in Django + publishes a blockchain mint intent.
-    Requires the user to hold a minimum amount of JBLB tokens.
-    """
+def create_club(name, owner, owner_wallet, category="COMMON", tier="COMMON", access_type="Free", privileges="Basic yield farms from JBLB partners", description=""):
+    if not owner_wallet:
+        raise ValidationError("Hedera wallet required.")
 
-    has_tokens = validate_token_balance(owner_wallet, JBLB_TOKEN_ID, min_balance=MIN_JBLB_BALANCE)
-    if not has_tokens:
-        return {
-            "status": "failed",
-            "message": f"Insufficient JBLB balance. You must hold at least {MIN_JBLB_BALANCE} $JBLB tokens to create a club."
-        }
+    club = Club.objects.create(
+        owner=owner,
+        name=name,
+        owner_wallet=owner_wallet,
+        tier=tier,
+        category=category,
+        access_type=access_type,
+        privileges=privileges,
+        description=description,
+    )
+    add_member_to_club(club, owner)
 
-    intent = {
-        "type": "mint_club_nft",
-        "name": name,
-        "owner_wallet": owner_wallet,
-        "tier": tier,
-        "category": category,
-    }
+    if tier == "COMMON":
+        free_nft = CommonNFT.objects.filter(is_assigned=False).first()
+        if free_nft:
+            free_nft.is_assigned = True
+            free_nft.club = club
+            free_nft.save()
 
-    result = publish_intent(intent)
+            club.nft_id = os.getenv("JBLB_COMMON_COLLECTION_ID")
+            club.nft_serial = free_nft.serial
+            club.metadata_cid = f"premint-{free_nft.serial}"
+            club.save()
 
-    return {
-        "status": "success",
-        "nft_id": result.get("nft_id", "mock-nft"),
-        "tx_hash": result.get("tx_hash", "mock-hash"),
-    }
+            print(f"Assigned pre-mint NFT: Serial {free_nft.serial}")
+        else:
+            print("Assign Common Nft club to user")
+            nft_data = mint_and_assign_common_nft(club)
+            club.nft_id = nft_data["nft_id"]
+            club.nft_serial = nft_data["nft_serial"]
+            club.metadata_cid = nft_data["metadata_cid"]
+            club.save()
+    else:
+        raise ValidationError("Only COMMON tier supported for now.")
+
+    return club
+
 
 def join_club(user, club_id):
     club = club_repository.get_club_by_id(club_id)
