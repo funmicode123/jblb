@@ -22,4 +22,4 @@ COPY . .
 EXPOSE 8000
 
 # Run Django
-CMD ["gunicorn", "jblb_django_scaffold.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "jblb_project.wsgi:application", "--bind", "0.0.0.0:8000"]
