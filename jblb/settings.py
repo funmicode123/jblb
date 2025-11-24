@@ -26,7 +26,10 @@ TEMPLATES=[{'BACKEND':'django.template.backends.django.DjangoTemplates','DIRS':[
 WSGI_APPLICATION='jblb.wsgi.application'
 #DATABASES={'default':{'ENGINE':'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3'}}
 DATABASES = {
-    'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
+    'default': dj_database_url.config(
+        default='postgres://localhost:5432/jblb_db',
+        conn_max_age=600
+    )
 }
 
 REST_FRAMEWORK = {
