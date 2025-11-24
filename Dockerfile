@@ -11,7 +11,6 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-RUN apk add --no-cache git
 
 # Install dependencies
 COPY requirements.txt .
