@@ -64,12 +64,12 @@ WSGI_APPLICATION='jblb.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'jblb_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Newbie@1994',
-        'HOST': '127.0.0.1',
-        'Port': 5433
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('MYSQL_DATABASE'),
+        'USER': os.getenv('MYSQL_USER'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+        'HOST': f'{os.getenv("MYSQL_USER")}.mysql.pythonanywhere-services.com',
+        'PORT': '3306',
     }
 }
 
