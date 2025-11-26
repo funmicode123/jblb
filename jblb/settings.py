@@ -62,16 +62,24 @@ TEMPLATES=[{
 
 WSGI_APPLICATION='jblb.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DATABASE'),
-        'USER': os.getenv('MYSQL_USER'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-        'HOST': f'{os.getenv("MYSQL_USER")}.mysql.pythonanywhere-services.com',
-        'PORT': '3306',
+ENV = os.getenv("ENV", "LOCAL")
+if ENV == "LOCAL":
+    DATABASES = {
+        'default': dj_database_url.parse(
+            os.getenv("DATABASE_URL")
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('MYSQL_DATABASE'),
+            'USER': os.getenv('MYSQL_USER'),
+            'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+            'HOST': f'{os.getenv("MYSQL_USER")}.mysql.pythonanywhere-services.com',
+            'PORT': '3306',
+        }
+    }
 
 
 REST_FRAMEWORK = {
@@ -91,6 +99,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
