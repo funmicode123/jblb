@@ -19,6 +19,8 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy the rest of the app
 COPY . .
 
+RUN python manage.py collectstatic --noinput
+
 # Expose port
 EXPOSE 8000
 

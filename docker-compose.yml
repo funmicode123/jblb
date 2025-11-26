@@ -6,9 +6,9 @@ services:
     env_file: .env
     volumes: ['.:/app']
   db:
-    image: postgres:15
+    image: postgres:18
     environment:
       POSTGRES_DB: jblb
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: secret
-    ports: ['5432:5432']
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Newbie@1994
+    ports: ['5433:5432']
