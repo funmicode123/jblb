@@ -63,21 +63,22 @@ TEMPLATES=[{
 WSGI_APPLICATION='jblb.wsgi.application'
 
 ENV = os.getenv("ENV", "LOCAL")
-if ENV == "LOCAL":
-    DATABASES = {
-        'default': dj_database_url.parse(
-            os.getenv("DATABASE_URL")
-        )
-    }
-else:
-    DATABASES = {
+# if ENV == "LOCAL":
+#     DATABASES = {
+#         'default': dj_database_url.parse(
+#             os.getenv("DATABASE_URL")
+#         )
+#     }
+# else:
+
+DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': os.getenv('MYSQL_DATABASE'),
             'USER': os.getenv('MYSQL_USER'),
             'PASSWORD': os.getenv('MYSQL_PASSWORD'),
-            'HOST': f'{os.getenv("MYSQL_USER")}.mysql.pythonanywhere-services.com',
-            'PORT': '3306',
+            'HOST': os.getenv('MYSQL_HOST'),
+            'PORT': os.getenv('MYSQL_PORT'),
         }
     }
 
