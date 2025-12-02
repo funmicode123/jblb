@@ -73,7 +73,7 @@ ENV = os.getenv("ENV", "LOCAL")
 
 DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.getenv('MYSQL_DATABASE'),
             'USER': os.getenv('MYSQL_USER'),
             'PASSWORD': os.getenv('MYSQL_PASSWORD'),
