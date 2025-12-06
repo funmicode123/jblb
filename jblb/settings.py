@@ -44,7 +44,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    #'jblb.middleware.rate_limit.RateLimitMiddleware',
+
 ]
 
 ROOT_URLCONF = 'jblb.urls'
