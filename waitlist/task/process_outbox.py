@@ -1,5 +1,5 @@
 from celery import shared_task
-from resend import Emails
+import resend
 from ..models import EmailOutbox
 
 @shared_task
@@ -8,7 +8,7 @@ def process_outbox():
 
     for item in pending:
         try:
-            Emails.send({
+            resend.Emails.send({
                 "from": "JBLB <send@yieldsport.xyz>",
                 "to": [item.to],
                 "subject": item.subject,

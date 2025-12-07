@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('to', models.EmailField(max_length=254)),
                 ('subject', models.CharField(max_length=255)),
-                ('html', models.CharField()),
+                ('html', models.TextField()),
                 ('status', models.CharField(choices=[('PENDING', 'pending'), ('SENT', 'sent'), ('FAILED', 'failed')], default='PENDING', max_length=20)),
                 ('retries', models.IntegerField(default=0)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
