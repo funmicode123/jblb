@@ -18,6 +18,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 DEBUG = os.getenv('DEBUG', '1') == '1'
 
+FRONTEND_URL=os.getenv('FRONTEND_URL')
+
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -94,6 +96,10 @@ CELERY_BEAT_SCHEDULE = {
     'pyth-rebalance-every-2-min': {
         'task': 'battles.tasks.pyth_rebalance_all',
         'schedule': crontab(minute='*/2'),
+    },
+    'process-email-outbox-every-5-min': {
+        'task': 'waitlist.task.process_outbox.process_outbox',
+        'schedule': crontab(minute='*/5'),
     },
 }
 

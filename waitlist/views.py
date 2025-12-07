@@ -9,6 +9,8 @@ from django.urls import reverse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+from jblb import settings
 from .models import Waitlist
 from .serializers import WaitlistSerializer
 from .services.email_service import render_verification_email
@@ -44,6 +46,7 @@ class PostWaitlistAPIView(APIView):
     def post(self, request):
         client_ip = request.META.get("REMOTE_ADDR")
         email = request.data.get("email")
+        referral_code = request.query_params.get("referral_code")
 
         if not can_send_verification(email, client_ip):
             return Response(
@@ -57,10 +60,19 @@ class PostWaitlistAPIView(APIView):
 
         try:
             with transaction.atomic():
-                waitlist = serializer.save(is_verified=False)
-                waitlist.verification_token = generate_unique_token()
-                waitlist.token_created = timezone.now()
-                waitlist.save()
+                waitlist = serializer.save(
+                    is_verified=False,
+                    verification_token=generate_unique_token(),
+                    token_created=timezone.now()
+                )
+
+                if referral_code:
+                    referrer = Waitlist.objects.filter(
+                        referral_code=referral_code
+                    ).first()
+                    if referrer:
+                        waitlist.referred_by = referrer
+                        waitlist.save(update_fields=["referred_by"])
 
                 verify_url = request.build_absolute_uri(
                     reverse('verify-waitlist') + f"?token={waitlist.verification_token}"
@@ -68,7 +80,8 @@ class PostWaitlistAPIView(APIView):
 
                 html_body = render_verification_email(
                     waitlist.custom_id,
-                    verify_url
+                    verify_url,
+                    waitlist.referral_code
                 )
 
                 queue_email(
@@ -78,8 +91,10 @@ class PostWaitlistAPIView(APIView):
                 )
 
             return Response({
-                "message": "Waitlist saved. Verification email queued.",
-                "your_id": waitlist.custom_id
+                "message": "Check your email! Share your link to earn rewards",
+                "your_id": waitlist.custom_id,
+                "your_referral_link": f"{settings.FRONTEND_URL}/waitlist?ref="
+                                      f"{waitlist.referral_code}"
             }, status=201)
 
         except Exception as e:
@@ -113,7 +128,6 @@ class VerifyWaitlistView(APIView):
         user.token_created = None
         user.save()
 
-        # Calculate new verified position
         position = Waitlist.objects.filter(is_verified=True).count()
 
         return Response(
@@ -130,3 +144,20 @@ class ListWaitlistAPIView(APIView):
     def get(self, request):
         total = Waitlist.objects.filter(is_verified=True).count()
         return Response({"total_on_waitlist": total})
+
+
+class ReferralStatsView(APIView):
+    def get(self, request):
+        code = request.query_params.get("code")
+        if not code:
+            return Response({"error": "Missing code"}, status=400)
+
+        user = get_object_or_404(Waitlist, referral_code=code)
+        count = user.referrals.filter(is_verified=True).count()
+
+        return Response({
+            "your_id": user.custom_id,
+            "referral_code": user.referral_code,
+            "total_referred": count,
+            "message": f"You have {count} verified referrals!"
+        })
