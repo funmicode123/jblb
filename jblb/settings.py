@@ -19,8 +19,19 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 DEBUG = os.getenv('DEBUG', '1') == '1'
 
 FRONTEND_URL=os.getenv('FRONTEND_URL')
+FRONTEND_URL_2=os.getenv('FRONTEND_2')
+BACKEND_URL=os.getenv('BACKEND_URL')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    BACKEND_URL,
+    FRONTEND_URL
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    FRONTEND_URL,
+    FRONTEND_URL_2
+]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',

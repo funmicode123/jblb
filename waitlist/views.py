@@ -70,7 +70,6 @@ class PostWaitlistAPIView(APIView):
                     referrer = Waitlist.objects.filter(
                         referral_code=referral_code
                     ).first()
-                    # Prevent self-referral
                     if referrer and referrer != waitlist:
                         waitlist.referred_by = referrer
                         waitlist.save(update_fields=["referred_by"])
