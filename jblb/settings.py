@@ -19,15 +19,17 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 DEBUG = os.getenv('DEBUG', '1') == '1'
 
 FRONTEND_URL=os.getenv('FRONTEND_URL')
+FRONTEND_URL_2=os.getenv('FRONTEND_2')
+BACKEND_URL=os.getenv('BACKEND_URL')
 
 ALLOWED_HOSTS = [
-    'api.yieldsport.xyz',
-    'yieldsport.xyz'
+    BACKEND_URL,
+    FRONTEND_URL
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://api.yieldsport.xyz",
-    "https://yieldsport.xyz",
+    FRONTEND_URL,
+    FRONTEND_URL_2
 ]
 
 
