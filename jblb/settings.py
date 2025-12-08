@@ -20,7 +20,16 @@ DEBUG = os.getenv('DEBUG', '1') == '1'
 
 FRONTEND_URL=os.getenv('FRONTEND_URL')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'api.yieldsport.xyz',
+    'yieldsport.xyz'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://api.yieldsport.xyz",
+    "https://yieldsport.xyz",
+]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
