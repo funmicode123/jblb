@@ -13,7 +13,6 @@ def process_outbox(self):
     print("PROCESS_OUTBOX TASK STARTED")
     logger.info("Starting to process email outbox...")
     
-    # Configure resend API key
     import resend
     resend.api_key = os.getenv('RESEND_API_KEY')
     

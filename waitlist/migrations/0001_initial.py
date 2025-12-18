@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='Waitlist',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('custom_id', models.CharField(default=waitlist.models.generate_custom_id, max_length=20, unique=True)),
+                ('custom_id', models.CharField(max_length=20, unique=True, blank=True, null=True)),
                 ('username', models.CharField(max_length=100, unique=True)),
                 ('email', models.EmailField(max_length=254, unique=True)),
                 ('is_verified', models.BooleanField(default=False)),

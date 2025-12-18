@@ -26,6 +26,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -104,6 +105,7 @@ CELERY_BEAT_SCHEDULE = {
     'process-email-outbox': {
         'task': 'waitlist.tasks.process_outbox',
         'schedule': crontab(minute='*/1')
+
     },
 }
 
