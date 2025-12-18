@@ -18,7 +18,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 DEBUG = os.getenv('DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "jblb-app.onrender.com",
+    "yieldsport.xyz",
+    "www.yieldsport.xyz",
+    "localhost",
+    "127.0.0.1",
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -75,14 +81,14 @@ DATABASES = {
    }
 }
 
-#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.resend.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "resend"
 EMAIL_HOST_PASSWORD = os.getenv("RESEND_API_KEY")
-DEFAULT_FROM_EMAIL = "jblbgeng@gmail.com"
+DEFAULT_FROM_EMAIL = "JBLB <send@yieldsport.xyz>"
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
@@ -94,6 +100,10 @@ CELERY_BEAT_SCHEDULE = {
     'pyth-rebalance-every-2-min': {
         'task': 'battles.tasks.pyth_rebalance_all',
         'schedule': crontab(minute='*/2'),
+    },
+    'process-email-outbox': {
+        'task': 'waitlist.tasks.process_outbox',
+        'schedule': crontab(minute='*/1')
     },
 }
 

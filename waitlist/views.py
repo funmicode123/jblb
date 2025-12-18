@@ -62,9 +62,17 @@ class PostWaitlistAPIView(APIView):
                 waitlist.token_created = timezone.now()
                 waitlist.save()
 
-                verify_url = request.build_absolute_uri(
-                    reverse('verify-waitlist') + f"?token={waitlist.verification_token}"
-                )
+                frontend_url = os.getenv('FRONTEND_URL')
+                backend_base_url = os.getenv('BACKEND_BASE_URL')
+                
+                if frontend_url:
+                    verify_url = f"{frontend_url.rstrip('/')}/verify?token={waitlist.verification_token}"
+                elif backend_base_url:
+                    verify_url = f"{backend_base_url.rstrip('/')}/api/waitlist/verify/?token={waitlist.verification_token}"
+                else:
+                    verify_url = request.build_absolute_uri(
+                        reverse('verify-waitlist') + f"?token={waitlist.verification_token}"
+                    )
 
                 html_body = render_verification_email(
                     waitlist.custom_id,
@@ -113,7 +121,6 @@ class VerifyWaitlistView(APIView):
         user.token_created = None
         user.save()
 
-        # Calculate new verified position
         position = Waitlist.objects.filter(is_verified=True).count()
 
         return Response(
