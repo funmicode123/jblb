@@ -23,6 +23,7 @@ DEBUG = os.getenv('DEBUG', '1') == '1'
 ALLOWED_HOSTS = [
     "jblb-app.onrender.com",
     "yieldsport.xyz",
+    'api.yieldsport.xyz'
     "www.yieldsport.xyz",
     "localhost",
     "127.0.0.1",
