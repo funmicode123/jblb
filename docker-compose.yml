@@ -8,8 +8,10 @@ services:
 
   web:
     build: .
+    env_file:
+      - .env
     volumes: ['.:/app']
-    ports: ['8000:8000']
+    ports: ['80:8000']
     depends_on:
       - redis
 

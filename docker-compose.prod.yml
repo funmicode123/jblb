@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7
+    restart: always
+
+  web:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "80:8000"
+    depends_on:
+      - redis
+    restart: always
+
+  worker:
+    build: .
+    command: celery -A jblb worker --loglevel=info --pool=solo
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: always
+
+  beat:
+    build: .
+    command: celery -A jblb beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: always
