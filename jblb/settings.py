@@ -28,6 +28,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     'jblb-api.onrender.com',
+    '3.137.156.30'
 ]
 
 
