@@ -7,16 +7,43 @@ services:
 
   web:
     build: .
+    container_name: jblb_api
     env_file:
       - .env
-    ports:
-      - "80:8000"
+    # ports:
+    #   - "80:8000"
+    expose:
+      - "8000"
     depends_on:
       - redis
     restart: always
+    networks:
+      - app_network
+
+  nginx:
+    build: ./nginx
+    container_name: jblb_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d:ro
+      - certbot-www:/var/www/certbot
+      - certbot-etc:/etc/letsencrypt
+    depends_on:
+      - web
+    networks:
+      - app_network  
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-etc:/etc/letsencrypt
 
   worker:
     build: .
+    container_name: jblb_worker
     command: celery -A jblb worker --loglevel=info --pool=solo
     env_file:
       - .env
@@ -26,9 +53,16 @@ services:
 
   beat:
     build: .
+    container_name: jblb_beat
     command: celery -A jblb beat --loglevel=info
     env_file:
       - .env
     depends_on:
       - redis
     restart: always
+volumes:
+  certbot-www:
+  certbot-etc:
+
+networks:
+  app_network:
