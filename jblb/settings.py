@@ -26,10 +26,8 @@ ALLOWED_HOSTS = [
     'api.yieldsport.xyz',
     "www.yieldsport.xyz",
     "localhost",
-    "web", 
     "127.0.0.1",
     'jblb-api.onrender.com',
-    '3.137.156.30'
 ]
 
 
@@ -87,7 +85,7 @@ WSGI_APPLICATION='jblb.wsgi.application'
 #         'PASSWORD': tmpPostgres.password,
 #         'HOST': tmpPostgres.hostname,
 #         'PORT': 5432,
-#         'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
+        # 'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
 #     }
 # }
 
@@ -147,10 +145,10 @@ CACHES = {
 #   }
 # }
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://api.yieldsport.xyz",
-    "http://www.api.yieldsport.xyz",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://api.yieldsport.xyz",
+#     "http://www.api.yieldsport.xyz",
+# ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -175,7 +173,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = True
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
