@@ -25,10 +25,6 @@ client.set_operator(
 
 
 def create_hedera_account():
-    """Create a new Hedera account with a new key pair
-    Returns Hedera account details and EVM-compatible address.
-    """
-    # Generate a new private/public key pair
     new_private_key = PrivateKey.generate_ecdsa()
     new_public_key = new_private_key.public_key()
 

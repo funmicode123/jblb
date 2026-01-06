@@ -18,6 +18,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 DEBUG = os.getenv('DEBUG', '1') == '1'
 
+FRONTEND_URL=os.getenv('FRONTEND_URL')
 ALLOWED_HOSTS = [
     "jblb-app.onrender.com",
     "yieldsport.xyz",
@@ -91,8 +92,9 @@ EMAIL_HOST_USER = "resend"
 EMAIL_HOST_PASSWORD = os.getenv("RESEND_API_KEY")
 DEFAULT_FROM_EMAIL = "JBLB <send@yieldsport.xyz>"
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -104,7 +106,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'process-email-outbox': {
         'task': 'waitlist.tasks.process_outbox',
-        'schedule': crontab(minute='*/1')
+        'schedule': crontab(minute='*/2')
 
     },
 }

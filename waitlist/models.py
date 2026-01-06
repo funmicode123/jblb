@@ -1,6 +1,7 @@
 import secrets
 from datetime import timezone, timedelta
 from django.db import models
+from users.models import User
 
 
 # def generate_custom_id():
@@ -23,6 +24,7 @@ class Waitlist(models.Model):
     referred_by = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='referrals'
     )
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -35,9 +37,7 @@ class Waitlist(models.Model):
                     self.referral_code = code
                     break
 
-        # Set custom_id before saving if it's a new object
         if is_new and not self.custom_id:
-            # Temporarily set a placeholder to avoid null constraint
             self.custom_id = f"JBLB-{str(0).zfill(5)}"
 
         super().save(*args, **kwargs)

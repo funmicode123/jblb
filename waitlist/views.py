@@ -9,9 +9,11 @@ from django.urls import reverse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAdminUser
+from rest_framework.decorators import permission_classes
 
 from jblb import settings
-from .models import Waitlist
+from .models import Waitlist, EmailOutbox
 from .serializers import WaitlistSerializer
 from .services.email_service import render_verification_email
 from .services.outbox_service import queue_email
@@ -169,3 +171,53 @@ class ReferralStatsView(APIView):
             "total_referred": count,
             "message": f"You have {count} verified referrals!"
         })
+
+
+class ClearWaitlistView(APIView):
+    """
+    Endpoint to clear waitlist entries and email outbox for testing purposes.
+    Only accessible by admin users.
+    """
+    permission_classes = [IsAdminUser]
+    
+    def delete(self, request):
+        # Get query parameters
+        emails = request.query_params.getlist('email', [])
+        delete_all = request.query_params.get('all', False)
+        
+        if emails:
+            # Delete specific emails
+            deleted_counts = {}
+            for email in emails:
+                waitlist_count = Waitlist.objects.filter(email=email).delete()[0]
+                outbox_count = EmailOutbox.objects.filter(to=email).delete()[0]
+                deleted_counts[email] = {
+                    'waitlist': waitlist_count,
+                    'outbox': outbox_count
+                }
+            
+            return Response({
+                'message': 'Successfully cleared waitlist entries',
+                'deleted_counts': deleted_counts
+            }, status=status.HTTP_200_OK)
+            
+        elif delete_all:
+            # Delete all entries
+            waitlist_count = Waitlist.objects.count()
+            outbox_count = EmailOutbox.objects.count()
+            
+            Waitlist.objects.all().delete()
+            EmailOutbox.objects.all().delete()
+            
+            return Response({
+                'message': 'Successfully cleared all waitlist entries',
+                'deleted_counts': {
+                    'waitlist': waitlist_count,
+                    'outbox': outbox_count
+                }
+            }, status=status.HTTP_200_OK)
+            
+        else:
+            return Response({
+                'error': 'Please specify either email parameters or all=true'
+            }, status=status.HTTP_400_BAD_REQUEST)

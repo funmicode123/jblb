@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from hiero_sdk_python import(
     Client, TokenMintTransaction, PrivateKey, AccountId, TokenId
 )
+from hiero_sdk_python.transaction.transfer_transaction import TransferTransaction
 
 
 HEDERA_MIRROR_NODE = "https://mainnet-public.mirrornode.hedera.com/api/v1"
@@ -124,3 +125,57 @@ def mint_rank_nft(user, battle_title: str, rank: int):
     print(f"Minted Rank #{rank} NFT to {user.username} | Serial: {serial} | CID: {cid}")
 
     return serial
+
+
+def transfer_jsparks(user, amount):
+    """
+    Transfer JSparks tokens to a user's account.
+    
+    Args:
+        user: User object with hedera_account_id
+        amount: Amount of JSparks to transfer (as integer, e.g., 10 for 10 JSparks)
+    """
+    if not user.hedera_account_id:
+        raise ValidationError("User does not have a Hedera account ID")
+    
+    # Get JSparks token ID from environment variables
+    jsparks_token_id = os.getenv("JSPARKS_TOKEN_ID")
+    if not jsparks_token_id:
+        raise ValidationError("JSPARKS_TOKEN_ID not configured in environment variables")
+    
+    # Get operator credentials
+    operator_id = os.getenv("HEDERA_OPERATOR_ID")
+    operator_key = os.getenv("HEDERA_OPERATOR_KEY")
+    
+    if not operator_id or not operator_key:
+        raise ValidationError("Hedera operator credentials not configured")
+    
+    # Create client
+    client = Client()
+    client.set_operator(
+        AccountId.from_string(operator_id),
+        PrivateKey.from_string(operator_key)
+    )
+    
+    # Create transfer transaction
+    transfer_tx = (
+        TransferTransaction()
+        .add_token_transfer(
+            TokenId.from_string(jsparks_token_id),
+            AccountId.from_string(operator_id),  # Operator sends tokens
+            -amount  # Negative amount for sender
+        )
+        .add_token_transfer(
+            TokenId.from_string(jsparks_token_id),
+            AccountId.from_string(user.hedera_account_id),  # Recipient receives tokens
+            amount  # Positive amount for recipient
+        )
+    )
+    
+    # Freeze and sign transaction
+    transfer_tx.freeze_with(client)
+    
+    # Execute transaction
+    receipt = transfer_tx.execute(client)
+    
+    return receipt
