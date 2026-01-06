@@ -19,7 +19,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options['emails']:
-            # Delete specific emails
             for email in options['emails']:
                 waitlist_entries = Waitlist.objects.filter(email=email)
                 count = waitlist_entries.count()
@@ -35,7 +34,6 @@ class Command(BaseCommand):
                     )
                 )
         elif options['all']:
-            # Delete all entries
             waitlist_count = Waitlist.objects.count()
             outbox_count = EmailOutbox.objects.count()
             
@@ -48,7 +46,6 @@ class Command(BaseCommand):
                 )
             )
         else:
-            # Show usage if no arguments provided
             self.stdout.write(
                 self.style.WARNING(
                     'Please specify either --emails <email1> <email2> ... or --all to delete entries'

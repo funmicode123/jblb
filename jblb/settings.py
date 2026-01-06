@@ -4,6 +4,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from celery.schedules import crontab
 import dj_database_url
+from urllib.parse import urlparse, parse_qsl
+
 
 
 load_dotenv()
@@ -22,9 +24,11 @@ FRONTEND_URL=os.getenv('FRONTEND_URL')
 ALLOWED_HOSTS = [
     "jblb-app.onrender.com",
     "yieldsport.xyz",
+    'api.yieldsport.xyz',
     "www.yieldsport.xyz",
     "localhost",
     "127.0.0.1",
+    'jblb-api.onrender.com',
 ]
 
 
@@ -72,6 +76,21 @@ TEMPLATES=[{
 
 WSGI_APPLICATION='jblb.wsgi.application'
 
+# tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': tmpPostgres.path.replace('/', ''),
+#         'USER': tmpPostgres.username,
+#         'PASSWORD': tmpPostgres.password,
+#         'HOST': tmpPostgres.hostname,
+#         'PORT': 5432,
+        # 'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
+#     }
+# }
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -80,6 +99,7 @@ DATABASES = {
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
         'HOST': os.getenv('POSTGRES_HOST'),
         'PORT': os.getenv('POSTGRES_PORT'),
+        'OPTIONS': dict(parse_qsl(os.getenv('POSTGRES_OPTIONS'))),
    }
 }
 
@@ -92,9 +112,8 @@ EMAIL_HOST_USER = "resend"
 EMAIL_HOST_PASSWORD = os.getenv("RESEND_API_KEY")
 DEFAULT_FROM_EMAIL = "JBLB <send@yieldsport.xyz>"
 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
-
+CELERY_BROKER_URL =  os.getenv("REDIS_URL") 
+CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")  
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -127,6 +146,11 @@ CACHES = {
 #   }
 # }
 
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://api.yieldsport.xyz",
+#     "http://www.api.yieldsport.xyz",
+# ]
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -151,3 +175,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = True
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    env_file:
+      - .env
+    volumes: ['.:/app']
+    ports: ['80:8000']
+    depends_on:
+      - redis
+
+  db:
+      image: postgres:18
+      environment:
+        POSTGRES_DB: jblb
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: Newbie@1994
+      ports: ['5433:5432']
+    
+  worker:
+    build: .
+    container_name:  celery_worker
+    command: celery -A jblb worker --loglevel=info --pool=solo
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  beat:
+    build: .
+    container_name: celery_beat
+    command: celery -A jblb beat --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  
