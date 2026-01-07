@@ -3,10 +3,8 @@ import dj_database_url
 from pathlib import Path
 from dotenv import load_dotenv
 from celery.schedules import crontab
-import dj_database_url
 from urllib.parse import urlparse, parse_qsl
-
-
+import dj_database_url
 
 load_dotenv()
 
@@ -15,22 +13,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 HEDERA_OPERATOR_ID = os.getenv("HEDERA_OPERATOR_ID")
 HEDERA_OPERATOR_KEY = os.getenv("HEDERA_OPERATOR_KEY")
 
-
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 DEBUG = os.getenv('DEBUG', '1') == '1'
 
-FRONTEND_URL=os.getenv('FRONTEND_URL')
 ALLOWED_HOSTS = [
     "jblb-app.onrender.com",
     "yieldsport.xyz",
-    'api.yieldsport.xyz',
     "www.yieldsport.xyz",
     "localhost",
     "127.0.0.1",
-    'jblb-api.onrender.com',
 ]
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -44,7 +37,8 @@ INSTALLED_APPS = [
     'clubs',
     'battles',
     'blockchain',
-    'waitlist'
+    'waitlist',
+    'referrals'  
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -173,7 +167,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+FRONTEND_URL= os.getenv("FRONTEND_URL")
 
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # SECURE_SSL_REDIRECT = True
