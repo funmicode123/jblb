@@ -8,5 +8,5 @@ urlpatterns = [
     path('api/battles/', include('battles.urls')),
     path('api/blockchain/', include('blockchain.urls')),
     path('api/waitlist/', include('waitlist.urls')),
-    path('api/referrals/', include('referrals.urls')),  
+    path('api/referrals/', include('referrals.urls')),  # Add referrals URLs
 ]

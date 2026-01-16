@@ -33,12 +33,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',  # Add SimpleJWT
     'users',
     'clubs',
     'battles',
     'blockchain',
     'waitlist',
-    'referrals'  
+    'referrals'  # Add the referrals app
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -50,7 +51,6 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-
 ]
 
 ROOT_URLCONF = 'jblb.urls'
@@ -63,27 +63,11 @@ TEMPLATES=[{
         'django.template.context_processors.debug',
         'django.template.context_processors.request',
         'django.contrib.auth.context_processors.auth',
-        'django.contrib.messages.context_processors.messages']
-    }
-}
-]
+        'django.contrib.messages.context_processors.messages',
+    ]}
+}]
 
 WSGI_APPLICATION='jblb.wsgi.application'
-
-# tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': tmpPostgres.path.replace('/', ''),
-#         'USER': tmpPostgres.username,
-#         'PASSWORD': tmpPostgres.password,
-#         'HOST': tmpPostgres.hostname,
-#         'PORT': 5432,
-        # 'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
-#     }
-# }
-
 
 DATABASES = {
     'default': {
@@ -106,8 +90,8 @@ EMAIL_HOST_USER = "resend"
 EMAIL_HOST_PASSWORD = os.getenv("RESEND_API_KEY")
 DEFAULT_FROM_EMAIL = "JBLB <send@yieldsport.xyz>"
 
-CELERY_BROKER_URL =  os.getenv("REDIS_URL") 
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")  
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -119,7 +103,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'process-email-outbox': {
         'task': 'waitlist.tasks.process_outbox',
-        'schedule': crontab(minute='*/2')
+        'schedule': crontab(minute='*/1')
 
     },
 }
@@ -129,21 +113,6 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
-
-# CACHES = {
-#   "default": {
-#     "BACKEND": "django_redis.cache.RedisCache",
-#     "LOCATION": "redis://127.0.0.1:6379/1",
-#     "OPTIONS": {
-#         "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#     }
-#   }
-# }
-
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://api.yieldsport.xyz",
-#     "http://www.api.yieldsport.xyz",
-# ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -167,9 +136,6 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-FRONTEND_URL= os.getenv("FRONTEND_URL")
-
-# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-# SECURE_SSL_REDIRECT = True
-# CSRF_COOKIE_SECURE = True
-# SESSION_COOKIE_SECURE = True
+# Supabase Auth Configuration
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
