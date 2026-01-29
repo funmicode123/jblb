@@ -583,13 +583,20 @@ class ClerkAuthWaitlistView(APIView):
             
             if existing_waitlist:
                 # If user already exists, return their existing info
-                refresh = RefreshToken.for_user(existing_waitlist.user)
+                if existing_waitlist.user:
+                    refresh = RefreshToken.for_user(existing_waitlist.user)
+                else:
+                    # Handle case where waitlist exists but no user account created yet
+                    return Response({
+                        "error": "Waitlist entry exists but user account not created. Please contact support.",
+                        "waitlist_id": existing_waitlist.custom_id
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 
                 # Return user's own referral link
                 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
                 referral_link = f"{frontend_url}?ref={existing_waitlist.referral_code}"
                 
-                return Response({
+                response_data = {
                     "message": f"Welcome back {username}! You're already on the waitlist.",
                     "your_id": existing_waitlist.custom_id,
                     "username": existing_waitlist.username,
@@ -597,20 +604,32 @@ class ClerkAuthWaitlistView(APIView):
                     "is_verified": existing_waitlist.is_verified,
                     "referral_code": existing_waitlist.referral_code,
                     "referral_link": referral_link,
-                    "wallet_address": existing_waitlist.user.wallet_address,
-                    "hedera_account_id": existing_waitlist.user.hedera_account_id,
                     "access_token": str(refresh.access_token),
                     "refresh_token": str(refresh),
                     "dashboard_url": "/api/referrals/dashboard/"
-                }, status=status.HTTP_200_OK)
+                }
+                
+                # Only include wallet and Hedera info if user exists
+                if existing_waitlist.user:
+                    response_data.update({
+                        "wallet_address": existing_waitlist.user.wallet_address,
+                        "hedera_account_id": existing_waitlist.user.hedera_account_id
+                    })
+                
+                return Response(response_data, status=status.HTTP_200_OK)
             
             # Check if this user is joining via someone else's referral
             referred_by = None
             if referral_code_input:
                 try:
                     referred_by = Waitlist.objects.get(referral_code=referral_code_input)
+                    print(f"Found referrer: {referred_by}")  # Debug
                 except Waitlist.DoesNotExist:
                     # Invalid referral code, continue without referral
+                    print(f"Referral code {referral_code_input} not found")  # Debug
+                    referred_by = None
+                except Exception as e:
+                    print(f"Error looking up referral code: {e}")  # Debug
                     referred_by = None
             
             # Create waitlist entry with Clerk user data
@@ -678,6 +697,56 @@ class ClerkAuthWaitlistView(APIView):
                 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
                 referral_link = f"{frontend_url}?ref={waitlist.referral_code}"
                 
+                # Send welcome email to the user
+                try:
+                    # Create welcome email content
+                    email_subject = f"Welcome to JBLB #{waitlist.custom_id}!"
+                    email_html = f"""
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                        <h2>Welcome to JBLB #{waitlist.custom_id}!</h2>
+                        <p>Congratulations {first_name or username}! You've successfully joined the waitlist via {provider.title()} authentication.</p>
+                        
+                        <div style="background:#f0f8ff;padding:20px;border-radius:8px;margin:20px 0;">
+                            <h3>Your Account Details:</h3>
+                            <p><strong>User ID:</strong> {waitlist.custom_id}</p>
+                            <p><strong>Username:</strong> {username}</p>
+                            <p><strong>Email:</strong> {email}</p>
+                            <p><strong>Authentication Method:</strong> {provider.title()}</p>
+                        </div>
+                        
+                        <div style="background:#fff3cd;padding:20px;border-radius:8px;margin:20px 0;">
+                            <h3>Your Referral Link:</h3>
+                            <p>Share this link to invite friends and climb the leaderboard:</p>
+                            <input type="text" value="{referral_link}" readonly 
+                                   style="width:100%;padding:12px;font-size:16px;border-radius:8px;border:1px solid #ccc;"
+                                   onclick="this.select()">
+                            <p><strong>Your Referral Code:</strong> {waitlist.referral_code}</p>
+                        </div>
+                        
+                        <hr style="margin:30px 0;">
+                        
+                        <h3>What's Next?</h3>
+                        <ul>
+                            <li>Check your dashboard at any time using your access token</li>
+                            <li>Invite friends using your referral link above</li>
+                            <li>Watch your position on the leaderboard grow!</li>
+                        </ul>
+                        
+                        <p>Thanks for joining us!<br><strong>Team JBLB</strong></p>
+                    </div>
+                    """
+                    
+                    # Queue the email
+                    queue_email(
+                        to=email,
+                        subject=email_subject,
+                        html=email_html
+                    )
+                    print(f"Welcome email queued for {email}")
+                    
+                except Exception as e:
+                    print(f"Error queuing welcome email for {email}: {str(e)}")
+                
                 response_data = {
                     "message": f"Welcome {username}! You're on the waitlist.",
                     "your_id": waitlist.custom_id,
@@ -689,7 +758,8 @@ class ClerkAuthWaitlistView(APIView):
                     "referral_link": referral_link,
                     "access_token": str(refresh.access_token),
                     "refresh_token": str(refresh),
-                    "dashboard_url": "/api/referrals/dashboard/"
+                    "dashboard_url": "/api/referrals/dashboard/",
+                    "email_sent": True  # Indicate that email was sent
                 }
                 
                 # Include Hedera account information if available

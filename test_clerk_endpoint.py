@@ -3,11 +3,13 @@ import json
 
 # Test data with valid clerk_user_id and empty referral code
 test_data = {
-    "clerk_user_id": "user_clerk_id_from_frontend_3",
-    "email": "user4@example.com",
-    "username": "username4",
+    "clerk_user_id": "user_clerk_id_from_frontend_email_test",
+    "email": "emailtest@example.com",
+    "username": "emailtestuser",
+    "first_name": "Email",
+    "last_name": "Tester",
     "provider": "google",
-    "referral_code": ""  # Empty referral code
+    "referral_code": ""
 }
 
 # Make the request to your endpoint
@@ -21,7 +23,14 @@ try:
     )
     
     print(f"Status Code: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2)}")
+    response_json = response.json()
+    print(f"Response: {json.dumps(response_json, indent=2)}")
     
+    # Check if email was sent
+    if response.status_code == 201 and response_json.get('email_sent'):
+        print("\n✅ Email notification sent successfully!")
+    else:
+        print("\n⚠️  Email notification may not have been sent")
+        
 except Exception as e:
     print(f"Error: {str(e)}")
