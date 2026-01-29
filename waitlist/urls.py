@@ -6,7 +6,8 @@ from .views import (
     ReferralStatsView, 
     ClearWaitlistView,
     TokenRefreshView,
-    SupabaseAuthWaitlistView
+    SupabaseAuthWaitlistView,
+    ClerkAuthWaitlistView
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path('clear/', ClearWaitlistView.as_view(), name='clear-waitlist'),
     path('refresh-token/', TokenRefreshView.as_view(), name='refresh-token'),
     path('supabase-auth/', SupabaseAuthWaitlistView.as_view(), name='supabase-auth-waitlist'),
+    path('clerk-auth/', ClerkAuthWaitlistView.as_view(), name='clerk-auth-waitlist'),
 ]

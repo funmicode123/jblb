@@ -11,6 +11,7 @@ class User(AbstractUser):
     hedera_account_id = models.CharField(max_length=100, blank=True, null=True)
     hedera_public_key = models.TextField(blank=True, null=True)
     hedera_private_key = models.TextField(blank=True, null=True)
+    clerk_user_id = models.CharField(max_length=100, blank=True, null=True, unique=True)  # Add this field for Clerk integration
 
 
     def get_hedera_keys(self):

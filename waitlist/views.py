@@ -409,14 +409,24 @@ class SupabaseAuthWaitlistView(APIView):
             ).first()
             
             if existing_waitlist:
+                # Debug: Check if user exists
+                print(f"Existing waitlist user: {existing_waitlist.user}")
+                
                 # If user already exists, return their existing info
-                refresh = RefreshToken.for_user(existing_waitlist.user)
+                if existing_waitlist.user:
+                    refresh = RefreshToken.for_user(existing_waitlist.user)
+                else:
+                    # Handle case where waitlist exists but no user account created yet
+                    return Response({
+                        "error": "Waitlist entry exists but user account not created. Please contact support.",
+                        "waitlist_id": existing_waitlist.custom_id
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 
                 # Return user's own referral link
                 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
                 referral_link = f"{frontend_url}?ref={existing_waitlist.referral_code}"
                 
-                return Response({
+                response_data = {
                     "message": f"Welcome back {username}! You're already on the waitlist.",
                     "your_id": existing_waitlist.custom_id,
                     "username": existing_waitlist.username,
@@ -424,21 +434,34 @@ class SupabaseAuthWaitlistView(APIView):
                     "is_verified": existing_waitlist.is_verified,
                     "referral_code": existing_waitlist.referral_code,
                     "referral_link": referral_link,
-                    "wallet_address": existing_waitlist.user.wallet_address,
-                    "hedera_account_id": existing_waitlist.user.hedera_account_id,
                     "access_token": str(refresh.access_token),
                     "refresh_token": str(refresh),
-                    "dashboard_url": f"{frontend_url}/api/referrals/dashboard/"
-                }, status=status.HTTP_200_OK)
+                    "dashboard_url": "/api/referrals/dashboard/"
+                }
+                
+                # Only include wallet and Hedera info if user exists
+                if existing_waitlist.user:
+                    response_data.update({
+                        "wallet_address": existing_waitlist.user.wallet_address,
+                        "hedera_account_id": existing_waitlist.user.hedera_account_id
+                    })
+                
+                return Response(response_data, status=status.HTTP_200_OK)
             
             # Check if this user is joining via someone else's referral
             referred_by = None
             if referral_code_input:
                 try:
                     referred_by = Waitlist.objects.get(referral_code=referral_code_input)
+                    print(f"Found referrer: {referred_by}")  # Debug
                 except Waitlist.DoesNotExist:
+                    # Invalid referral code, continue without referral
+                    print(f"Referral code {referral_code_input} not found")  # Debug
                     referred_by = None
-            
+                except Exception as e:
+                    print(f"Error looking up referral code: {e}")  # Debug
+                    referred_by = None
+
             waitlist_data = {
                 'username': username,
                 'email': email,
@@ -502,6 +525,171 @@ class SupabaseAuthWaitlistView(APIView):
                     "access_token": str(refresh.access_token),
                     "refresh_token": str(refresh),
                     "dashboard_url": f"{frontend_url}/api/referrals/dashboard/"
+                }
+                
+                # Include Hedera account information if available
+                if 'hedera_account_data' in locals():
+                    response_data.update({
+                        "wallet_address": hedera_account_data["evm_address"],
+                        "hedera_account_id": hedera_account_data["hedera_account_id"]
+                    })
+                
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(
+                    serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ClerkAuthWaitlistView(APIView):
+    """
+    Handle waitlist registration via Clerk authentication
+    Works with Google, Twitter, and other providers supported by Clerk
+    """
+    def post(self, request):
+        try:
+            # Get user data from Clerk authentication
+            clerk_user_id = request.data.get('clerk_user_id')
+            email = request.data.get('email')
+            username = request.data.get('username') or request.data.get('first_name') or request.data.get('full_name')
+            provider = request.data.get('provider', 'clerk')  # Which provider was used (Google, Twitter, etc.)
+            first_name = request.data.get('first_name', '')
+            last_name = request.data.get('last_name', '')
+            picture = request.data.get('picture', '')
+            referral_code_input = request.data.get('referral_code')  # Optional referral code from someone else
+            
+            # Validate required fields
+            if not clerk_user_id or not email:
+                return Response(
+                    {"error": "clerk_user_id and email are required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not username:
+                # Extract username from email if not provided
+                username = email.split('@')[0]
+            
+            # Check if user already exists in waitlist by clerk_user_id or email
+            existing_waitlist = Waitlist.objects.filter(
+                email=email
+            ).first()
+            
+            if existing_waitlist:
+                # If user already exists, return their existing info
+                refresh = RefreshToken.for_user(existing_waitlist.user)
+                
+                # Return user's own referral link
+                frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+                referral_link = f"{frontend_url}?ref={existing_waitlist.referral_code}"
+                
+                return Response({
+                    "message": f"Welcome back {username}! You're already on the waitlist.",
+                    "your_id": existing_waitlist.custom_id,
+                    "username": existing_waitlist.username,
+                    "email": email,
+                    "is_verified": existing_waitlist.is_verified,
+                    "referral_code": existing_waitlist.referral_code,
+                    "referral_link": referral_link,
+                    "wallet_address": existing_waitlist.user.wallet_address,
+                    "hedera_account_id": existing_waitlist.user.hedera_account_id,
+                    "access_token": str(refresh.access_token),
+                    "refresh_token": str(refresh),
+                    "dashboard_url": "/api/referrals/dashboard/"
+                }, status=status.HTTP_200_OK)
+            
+            # Check if this user is joining via someone else's referral
+            referred_by = None
+            if referral_code_input:
+                try:
+                    referred_by = Waitlist.objects.get(referral_code=referral_code_input)
+                except Waitlist.DoesNotExist:
+                    # Invalid referral code, continue without referral
+                    referred_by = None
+            
+            # Create waitlist entry with Clerk user data
+            waitlist_data = {
+                'username': username,
+                'email': email,
+                'is_verified': True,  # Mark as verified since they authenticated via Clerk
+            }
+            
+            serializer = WaitlistSerializer(data=waitlist_data)
+            if serializer.is_valid():
+                waitlist = serializer.save()
+                
+                # Generate referral code for this user
+                waitlist.referral_code = get_random_string(10).upper()
+                
+                # Set the referrer if applicable
+                if referred_by:
+                    waitlist.referred_by = referred_by
+                
+                waitlist.custom_id = f"JBLB-{str(waitlist.id).zfill(5)}"
+                waitlist.save()
+                
+                # Create Hedera blockchain account first
+                try:
+                    hedera_account_data = create_hedera_account()
+                    
+                    # Create Django user account with Hedera integration and Clerk data
+                    password = get_random_string(12)
+                    django_user = User.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=password,
+                        # Include Hedera account data
+                        wallet_address=hedera_account_data["evm_address"],
+                        hedera_account_id=hedera_account_data["hedera_account_id"],
+                        hedera_public_key=hedera_account_data["hedera_public_key"],
+                        hedera_private_key=hedera_account_data["hedera_private_key"],
+                        # Store Clerk user ID for future reference
+                        first_name=first_name,
+                        last_name=last_name,
+                        clerk_user_id=clerk_user_id
+                    )
+                    
+                except Exception as e:
+                    # If Hedera account creation fails, still create the user but log the error
+                    password = get_random_string(12)
+                    django_user = User.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=password,
+                        first_name=first_name,
+                        last_name=last_name,
+                        clerk_user_id=clerk_user_id
+                    )
+                    print(f"Error creating Hedera account for user {email}: {str(e)}")
+                
+                waitlist.user = django_user
+                waitlist.save(update_fields=['user'])
+                
+                # Generate JWT tokens for immediate access
+                refresh = RefreshToken.for_user(django_user)
+                
+                # Generate referral link for sharing
+                frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+                referral_link = f"{frontend_url}?ref={waitlist.referral_code}"
+                
+                response_data = {
+                    "message": f"Welcome {username}! You're on the waitlist.",
+                    "your_id": waitlist.custom_id,
+                    "username": username,
+                    "email": email,
+                    "provider": provider,
+                    "is_verified": True,
+                    "referral_code": waitlist.referral_code,
+                    "referral_link": referral_link,
+                    "access_token": str(refresh.access_token),
+                    "refresh_token": str(refresh),
+                    "dashboard_url": "/api/referrals/dashboard/"
                 }
                 
                 # Include Hedera account information if available
