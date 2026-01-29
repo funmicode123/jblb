@@ -23,6 +23,7 @@ ALLOWED_HOSTS = [
     "www.yieldsport.xyz",
     "localhost",
     "127.0.0.1",
+    'api.yieldsport.xyz'
 ]
 
 INSTALLED_APPS = [
