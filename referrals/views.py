@@ -105,30 +105,29 @@ class LeaderboardView(APIView):
                 # Get the user's custom ID from their waitlist entry
                 user_position = "N/A"  # Default if no waitlist entry
                 try:
-                    # Try to find waitlist entry by user
-                    from waitlist.models import Waitlist
-                    user_waitlist = Waitlist.objects.filter(user=stats.user).first()
-                    if user_waitlist and user_waitlist.custom_id:
-                        # Extract just the numeric part from the custom_id (e.g., from "JBLB-00030" get "00030")
-                        custom_id = user_waitlist.custom_id
-                        # Split by '-' and get the last part (the numeric part)
-                        if '-' in custom_id:
-                            numeric_part = custom_id.split('-')[-1]
-                            user_position = numeric_part
-                        else:
-                            user_position = custom_id
+                    # Get the waitlist entry for this user to get their custom ID
+                    # First check if the user has a waitlist entry
+                    waitlist_entry = getattr(stats.user, 'waitlist', None)
+                    if waitlist_entry and hasattr(waitlist_entry, 'custom_id') and waitlist_entry.custom_id:
+                        user_position = waitlist_entry.custom_id
                     else:
-                        # If no custom_id in waitlist, use a default
-                        user_position = "00000"
+                        # Try to find waitlist entry by email if direct relation doesn't exist
+                        from waitlist.models import Waitlist
+                        user_waitlist = Waitlist.objects.filter(user=stats.user).first()
+                        if user_waitlist and user_waitlist.custom_id:
+                            user_position = user_waitlist.custom_id
+                        else:
+                            # If no custom_id in waitlist, use user ID with format
+                            user_position = f"JBLB-{str(stats.user.id).zfill(5)}"
                 except Exception as e:
-                    # If there's an issue getting waitlist entry, use default
-                    user_position = "00000"
+                    # If there's an issue getting waitlist entry, use user ID
+                    user_position = f"JBLB-{str(stats.user.id).zfill(5)}"
                 
                 leaderboard_data.append({
                     'rank': index,  # This is the rank (ascending from 1)
                     'username': stats.user.username,
                     'verified_referrals': stats.verified_referrals,
-                    'position': user_position  # This is the user's ID number (like 00030)
+                    'position': user_position  # This is the user's ID number (like #00030)
                 })
             
             from .serializers import LeaderboardSerializer

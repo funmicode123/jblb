@@ -24,8 +24,9 @@ from users.services.hedera_service import create_hedera_account
 
 resend.api_key = os.getenv("RESEND_API_KEY")
 
-EMAIL_LIMIT = 3
-EMAIL_WINDOW = 3600
+
+EMAIL_LIMIT = int(os.getenv("EMAIL_LIMIT", "10"))  
+EMAIL_WINDOW = int(os.getenv("EMAIL_WINDOW", "3600"))  
 
 User = get_user_model()
 
@@ -146,28 +147,23 @@ class VerifyWaitlistView(APIView):
         user.token_created = None
         user.save()
 
-        # Create or get user account automatically with Hedera integration
         if not user.user:
-            # Generate a secure password
             password = get_random_string(12)
             
-            # Create Hedera blockchain account first
             try:
                 hedera_account_data = create_hedera_account()
                 
-                # Create Django user account with Hedera integration
                 django_user = User.objects.create_user(
                     username=user.username,
                     email=user.email,
                     password=password,
-                    # Include Hedera account data
+                    
                     wallet_address=hedera_account_data["evm_address"],
                     hedera_account_id=hedera_account_data["hedera_account_id"],
                     hedera_public_key=hedera_account_data["hedera_public_key"],
                     hedera_private_key=hedera_account_data["hedera_private_key"]
                 )
             except Exception as e:
-                # If Hedera account creation fails, still create the user but log the error
                 django_user = User.objects.create_user(
                     username=user.username,
                     email=user.email,
@@ -253,12 +249,10 @@ class ClearWaitlistView(APIView):
     permission_classes = [IsAdminUser]
     
     def delete(self, request):
-        # Get query parameters
         emails = request.query_params.getlist('email', [])
         delete_all = request.query_params.get('all', False)
         
         if emails:
-            # Delete specific emails
             deleted_counts = {}
             for email in emails:
                 waitlist_count = Waitlist.objects.filter(email=email).delete()[0]
@@ -274,7 +268,6 @@ class ClearWaitlistView(APIView):
             }, status=status.HTTP_200_OK)
             
         elif delete_all:
-            # Delete all entries
             waitlist_count = Waitlist.objects.count()
             outbox_count = EmailOutbox.objects.count()
             
@@ -301,7 +294,6 @@ class GoogleWaitlistView(APIView):
     """
     def post(self, request):
         try:
-            # Get Google user data from social auth
             google_email = request.data.get('google_email')
             google_name = request.data.get('google_name')
             google_picture = request.data.get('google_picture')
@@ -312,10 +304,8 @@ class GoogleWaitlistView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Extract username from email (before @)
             username = google_email.split('@')[0]
             
-            # Check if user already exists in waitlist
             existing_waitlist = Waitlist.objects.filter(
                 email=google_email
             ).first()
@@ -326,23 +316,20 @@ class GoogleWaitlistView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Create waitlist entry with Google data
             waitlist_data = {
                 'username': username,
                 'email': google_email,
-                'is_verified': True,  # Mark as verified since they authenticated via Google
+                'is_verified': True,  
             }
             
             serializer = WaitlistSerializer(data=waitlist_data)
             if serializer.is_valid():
                 waitlist = serializer.save()
                 
-                # Generate referral code
                 waitlist.referral_code = get_random_string(10).upper()
                 waitlist.custom_id = f"JBLB-{str(waitlist.id).zfill(5)}"
                 waitlist.save()
                 
-                # Create Django user account automatically
                 password = get_random_string(12)
                 django_user = User.objects.create_user(
                     username=username,
@@ -352,7 +339,6 @@ class GoogleWaitlistView(APIView):
                 waitlist.user = django_user
                 waitlist.save(update_fields=['user'])
                 
-                # Generate JWT tokens for immediate access
                 refresh = RefreshToken.for_user(django_user)
                 
                 return Response({
@@ -385,12 +371,11 @@ class SupabaseAuthWaitlistView(APIView):
     """
     def post(self, request):
         try:
-            # Get user data from Supabase authentication
             email = request.data.get('email')
             username = request.data.get('username') or request.data.get('user_name') or request.data.get('full_name')
-            provider = request.data.get('provider', 'supabase')  # Which provider was used (Google, GitHub, etc.)
-            user_id = request.data.get('user_id')  # Supabase user ID
-            referral_code_input = request.data.get('referral_code')  # Optional referral code from someone else
+            provider = request.data.get('provider', 'supabase')  
+            user_id = request.data.get('user_id')  
+            referral_code_input = request.data.get('referral_code')  
             
             if not email:
                 return Response(
@@ -399,29 +384,23 @@ class SupabaseAuthWaitlistView(APIView):
                 )
             
             if not username:
-                # Extract username from email if not provided
                 username = email.split('@')[0]
             
-            # Check if user already exists in waitlist
             existing_waitlist = Waitlist.objects.filter(
                 email=email
             ).first()
             
             if existing_waitlist:
-                # Debug: Check if user exists
                 print(f"Existing waitlist user: {existing_waitlist.user}")
                 
-                # If user already exists, return their existing info
                 if existing_waitlist.user:
                     refresh = RefreshToken.for_user(existing_waitlist.user)
                 else:
-                    # Handle case where waitlist exists but no user account created yet
                     return Response({
                         "error": "Waitlist entry exists but user account not created. Please contact support.",
                         "waitlist_id": existing_waitlist.custom_id
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Return user's own referral link
                 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
                 referral_link = f"{frontend_url}?ref={existing_waitlist.referral_code}"
                 
@@ -438,7 +417,6 @@ class SupabaseAuthWaitlistView(APIView):
                     "dashboard_url": "/api/referrals/dashboard/"
                 }
                 
-                # Only include wallet and Hedera info if user exists
                 if existing_waitlist.user:
                     response_data.update({
                         "wallet_address": existing_waitlist.user.wallet_address,
@@ -447,18 +425,16 @@ class SupabaseAuthWaitlistView(APIView):
                 
                 return Response(response_data, status=status.HTTP_200_OK)
             
-            # Check if this user is joining via someone else's referral
             referred_by = None
             if referral_code_input:
                 try:
                     referred_by = Waitlist.objects.get(referral_code=referral_code_input)
-                    print(f"Found referrer: {referred_by}")  # Debug
+                    print(f"Found referrer: {referred_by}") 
                 except Waitlist.DoesNotExist:
-                    # Invalid referral code, continue without referral
                     print(f"Referral code {referral_code_input} not found")  # Debug
                     referred_by = None
                 except Exception as e:
-                    print(f"Error looking up referral code: {e}")  # Debug
+                    print(f"Error looking up referral code: {e}")  
                     referred_by = None
 
             waitlist_data = {
@@ -493,7 +469,6 @@ class SupabaseAuthWaitlistView(APIView):
                         hedera_private_key=hedera_account_data["hedera_private_key"]
                     )
                 except Exception as e:
-                    # If Hedera account creation fails, still create the user but log the error
                     password = get_random_string(12)
                     django_user = User.objects.create_user(
                         username=username,
@@ -505,10 +480,8 @@ class SupabaseAuthWaitlistView(APIView):
                 waitlist.user = django_user
                 waitlist.save(update_fields=['user'])
                 
-                # Generate JWT tokens for immediate access
                 refresh = RefreshToken.for_user(django_user)
                 
-                # Generate referral link for sharing
                 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
                 referral_link = f"{frontend_url}?ref={waitlist.referral_code}"
                 
@@ -526,7 +499,6 @@ class SupabaseAuthWaitlistView(APIView):
                     "dashboard_url": f"{frontend_url}/api/referrals/dashboard/"
                 }
                 
-                # Include Hedera account information if available
                 if 'hedera_account_data' in locals():
                     response_data.update({
                         "wallet_address": hedera_account_data["evm_address"],
@@ -554,17 +526,15 @@ class ClerkAuthWaitlistView(APIView):
     """
     def post(self, request):
         try:
-            # Get user data from Clerk authentication
             clerk_user_id = request.data.get('clerk_user_id')
             email = request.data.get('email')
             username = request.data.get('username') or request.data.get('first_name') or request.data.get('full_name')
-            provider = request.data.get('provider', 'clerk')  # Which provider was used (Google, Twitter, etc.)
+            provider = request.data.get('provider', 'clerk')  
             first_name = request.data.get('first_name', '')
             last_name = request.data.get('last_name', '')
             picture = request.data.get('picture', '')
-            referral_code_input = request.data.get('referral_code')  # Optional referral code from someone else
+            referral_code_input = request.data.get('referral_code')  
             
-            # Validate required fields
             if not clerk_user_id or not email:
                 return Response(
                     {"error": "clerk_user_id and email are required"},
@@ -572,26 +542,21 @@ class ClerkAuthWaitlistView(APIView):
                 )
             
             if not username:
-                # Extract username from email if not provided
                 username = email.split('@')[0]
             
-            # Check if user already exists in waitlist by clerk_user_id or email
             existing_waitlist = Waitlist.objects.filter(
                 email=email
             ).first()
             
             if existing_waitlist:
-                # If user already exists, return their existing info
                 if existing_waitlist.user:
                     refresh = RefreshToken.for_user(existing_waitlist.user)
                 else:
-                    # Handle case where waitlist exists but no user account created yet
                     return Response({
                         "error": "Waitlist entry exists but user account not created. Please contact support.",
                         "waitlist_id": existing_waitlist.custom_id
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Return user's own referral link
                 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
                 referral_link = f"{frontend_url}?ref={existing_waitlist.referral_code}"
                 
@@ -608,7 +573,6 @@ class ClerkAuthWaitlistView(APIView):
                     "dashboard_url": "/api/referrals/dashboard/"
                 }
                 
-                # Only include wallet and Hedera info if user exists
                 if existing_waitlist.user:
                     response_data.update({
                         "wallet_address": existing_waitlist.user.wallet_address,
@@ -617,64 +581,56 @@ class ClerkAuthWaitlistView(APIView):
                 
                 return Response(response_data, status=status.HTTP_200_OK)
             
-            # Check if this user is joining via someone else's referral
             referred_by = None
             if referral_code_input:
                 try:
                     referred_by = Waitlist.objects.get(referral_code=referral_code_input)
-                    print(f"Found referrer: {referred_by}")  # Debug
+                    print(f"Found referrer: {referred_by}")  
                 except Waitlist.DoesNotExist:
-                    # Invalid referral code, continue without referral
-                    print(f"Referral code {referral_code_input} not found")  # Debug
+                    print(f"Referral code {referral_code_input} not found") 
                     referred_by = None
                 except Exception as e:
-                    print(f"Error looking up referral code: {e}")  # Debug
+                    print(f"Error looking up referral code: {e}")  
                     referred_by = None
             
-            # Create waitlist entry with Clerk user data
             waitlist_data = {
                 'username': username,
                 'email': email,
-                'is_verified': True,  # Mark as verified since they authenticated via Clerk
+                'is_verified': True,  
             }
             
             serializer = WaitlistSerializer(data=waitlist_data)
             if serializer.is_valid():
                 waitlist = serializer.save()
                 
-                # Generate referral code for this user
                 waitlist.referral_code = get_random_string(10).upper()
                 
-                # Set the referrer if applicable
                 if referred_by:
                     waitlist.referred_by = referred_by
                 
                 waitlist.custom_id = f"JBLB-{str(waitlist.id).zfill(5)}"
                 waitlist.save()
                 
-                # Create Hedera blockchain account first
                 try:
                     hedera_account_data = create_hedera_account()
                     
-                    # Create Django user account with Hedera integration and Clerk data
                     password = get_random_string(12)
                     django_user = User.objects.create_user(
                         username=username,
                         email=email,
                         password=password,
-                        # Include Hedera account data
+                        
                         wallet_address=hedera_account_data["evm_address"],
                         hedera_account_id=hedera_account_data["hedera_account_id"],
                         hedera_public_key=hedera_account_data["hedera_public_key"],
                         hedera_private_key=hedera_account_data["hedera_private_key"],
-                        # Store Clerk user ID for future reference
+                        
                         first_name=first_name,
                         last_name=last_name,
                         clerk_user_id=clerk_user_id
                     )
                     
                 except Exception as e:
-                    # If Hedera account creation fails, still create the user but log the error
                     password = get_random_string(12)
                     django_user = User.objects.create_user(
                         username=username,
@@ -689,16 +645,12 @@ class ClerkAuthWaitlistView(APIView):
                 waitlist.user = django_user
                 waitlist.save(update_fields=['user'])
                 
-                # Generate JWT tokens for immediate access
                 refresh = RefreshToken.for_user(django_user)
                 
-                # Generate referral link for sharing
                 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
                 referral_link = f"{frontend_url}?ref={waitlist.referral_code}"
                 
-                # Send welcome email to the user
                 try:
-                    # Create welcome email content
                     email_subject = f"Welcome to JBLB #{waitlist.custom_id}!"
                     email_html = f"""
                     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
@@ -735,7 +687,6 @@ class ClerkAuthWaitlistView(APIView):
                     </div>
                     """
                     
-                    # Queue the email
                     queue_email(
                         to=email,
                         subject=email_subject,
@@ -758,10 +709,9 @@ class ClerkAuthWaitlistView(APIView):
                     "access_token": str(refresh.access_token),
                     "refresh_token": str(refresh),
                     "dashboard_url": "/api/referrals/dashboard/",
-                    "email_sent": True  # Indicate that email was sent
+                    "email_sent": True  
                 }
                 
-                # Include Hedera account information if available
                 if 'hedera_account_data' in locals():
                     response_data.update({
                         "wallet_address": hedera_account_data["evm_address"],
@@ -797,7 +747,6 @@ class TokenRefreshView(APIView):
             )
         
         try:
-            # Verify the user is a verified waitlist member
             waitlist_user = Waitlist.objects.get(
                 email=email,
                 is_verified=True
@@ -809,18 +758,15 @@ class TokenRefreshView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Validate and refresh the token
             from rest_framework_simplejwt.tokens import RefreshToken
             refresh = RefreshToken(refresh_token)
             
-            # Check if token belongs to this user
             if refresh['user_id'] != str(waitlist_user.user.id):
                 return Response(
                     {"error": "Invalid token for this user"},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
             
-            # Generate new tokens
             new_refresh = RefreshToken.for_user(waitlist_user.user)
             
             return Response({
