@@ -12,7 +12,6 @@ test_data = {
     "referral_code": ""
 }
 
-# Make the request to your endpoint
 url = "http://127.0.0.1:8000/api/waitlist/clerk-auth/"
 
 try:
@@ -26,7 +25,6 @@ try:
     response_json = response.json()
     print(f"Response: {json.dumps(response_json, indent=2)}")
     
-    # Check if email was sent
     if response.status_code == 201 and response_json.get('email_sent'):
         print("\n✅ Email notification sent successfully!")
     else:

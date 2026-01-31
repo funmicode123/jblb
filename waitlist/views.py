@@ -20,7 +20,6 @@ from .serializers import WaitlistSerializer
 from .services.email_service import render_verification_email
 from .services.outbox_service import queue_email
 
-# Import the Hedera service to create proper blockchain accounts
 from users.services.hedera_service import create_hedera_account
 
 resend.api_key = os.getenv("RESEND_API_KEY")
@@ -112,7 +111,7 @@ class PostWaitlistAPIView(APIView):
             return Response({
                 "message": "Check your email! Share your link to earn rewards",
                 "your_id": waitlist.custom_id,
-                "your_referral_link": f"{settings.FRONTEND_URL}/waitlist?ref="
+                "your_referral_link": f"{frontend_url}/waitlist?ref="
                                       f"{waitlist.referral_code}"
             }, status=201)
 

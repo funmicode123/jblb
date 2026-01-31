@@ -17,6 +17,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 DEBUG = os.getenv('DEBUG', '1') == '1'
 
+FRONTED_URL= os.getenv('FRONTEND_URL')
+
 ALLOWED_HOSTS = [
     "jblb-app.onrender.com",
     "yieldsport.xyz",
@@ -34,13 +36,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_simplejwt',  # Add SimpleJWT
+    'rest_framework_simplejwt',  
     'users',
     'clubs',
     'battles',
     'blockchain',
     'waitlist',
-    'referrals'  # Add the referrals app
+    'referrals'  
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -137,10 +139,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Supabase Auth Configuration
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
-# Clerk Auth Configuration
 CLERK_SECRET_KEY = os.getenv('CLERK_SECRET_KEY')
 CLERK_PUBLISHABLE_KEY = os.getenv('CLERK_PUBLISHABLE_KEY')
